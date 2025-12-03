@@ -15,7 +15,27 @@ import com.intellij.openapi.ui.Messages
 class SyncToTasksAction(private val command: String = "同步设计到任务") : AnAction(command) {
     override fun actionPerformed(e: AnActionEvent) {
         val project: Project = e.project ?: return
-        Messages.showInfoMessage(project, "正在同步设计变更至任务文档", "同步中")
-        // 这里添加实际同步设计到任务的逻辑
+        
+        try {
+            // 创建VSCode命令参数
+            val params = CoworkflowCommandConverter.createUpdateSectionParams(e)
+            
+            if (params != null) {
+                // 调用VSCode的updateSection命令
+                CoworkflowCommandConverter.executeVSCodeCommand(
+                    CoworkflowCommandConverter.VSCodeCommands.UPDATE_SECTION,
+                    e,
+                    params
+                )
+            } else {
+                // 回退到原有逻辑
+                Messages.showInfoMessage(project, "正在同步设计变更至任务文档", "同步中")
+            }
+        } catch (ex: Exception) {
+            println("SyncToTasksAction: 执行同步操作失败 - ${ex.message}")
+            ex.printStackTrace()
+            // 回退到原有逻辑
+            Messages.showInfoMessage(project, "正在同步设计变更至任务文档", "同步中")
+        }
     }
 }

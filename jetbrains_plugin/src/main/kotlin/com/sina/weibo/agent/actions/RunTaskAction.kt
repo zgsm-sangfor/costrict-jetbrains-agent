@@ -19,9 +19,32 @@ class RunTaskAction(private val command: String = "运行任务") : AnAction(com
             println("RunTaskAction: 项目为空，返回")
             return
         }
-        println("RunTaskAction: 显示信息对话框")
-        Messages.showInfoMessage(project, "正在执行任务", "运行中")
-        // 这里添加实际运行任务的逻辑
+        
+        try {
+            // 创建VSCode命令参数
+            val params = CoworkflowCommandConverter.createRunTaskParams(e)
+            
+            if (params != null) {
+                // 调用VSCode的runTask命令
+                CoworkflowCommandConverter.executeVSCodeCommand(
+                    CoworkflowCommandConverter.VSCodeCommands.RUN_TASK,
+                    e,
+                    params
+                )
+                println("RunTaskAction: VSCode命令执行完成")
+            } else {
+                // 回退到原有逻辑
+                println("RunTaskAction: 显示信息对话框")
+                Messages.showInfoMessage(project, "正在执行任务", "运行中")
+            }
+        } catch (ex: Exception) {
+            println("RunTaskAction: 执行任务操作失败 - ${ex.message}")
+            ex.printStackTrace()
+            // 回退到原有逻辑
+            println("RunTaskAction: 显示信息对话框")
+            Messages.showInfoMessage(project, "正在执行任务", "运行中")
+        }
+        
         println("RunTaskAction: 任务执行完成")
     }
 }

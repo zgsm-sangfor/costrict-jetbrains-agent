@@ -19,9 +19,32 @@ class RunAllTasksAction(private val command: String = "运行所有任务") : An
             println("RunAllTasksAction: 项目为空，返回")
             return
         }
-        println("RunAllTasksAction: 显示信息对话框")
-        Messages.showInfoMessage(project, "正在执行所有任务", "运行中")
-        // 这里添加实际运行所有任务的逻辑
+        
+        try {
+            // 创建VSCode命令参数
+            val params = CoworkflowCommandConverter.createRunAllTasksParams(e)
+            
+            if (params != null) {
+                // 调用VSCode的runAllTasks命令
+                CoworkflowCommandConverter.executeVSCodeCommand(
+                    CoworkflowCommandConverter.VSCodeCommands.RUN_ALL_TASKS,
+                    e,
+                    params
+                )
+                println("RunAllTasksAction: VSCode命令执行完成")
+            } else {
+                // 回退到原有逻辑
+                println("RunAllTasksAction: 显示信息对话框")
+                Messages.showInfoMessage(project, "正在执行所有任务", "运行中")
+            }
+        } catch (ex: Exception) {
+            println("RunAllTasksAction: 执行所有任务操作失败 - ${ex.message}")
+            ex.printStackTrace()
+            // 回退到原有逻辑
+            println("RunAllTasksAction: 显示信息对话框")
+            Messages.showInfoMessage(project, "正在执行所有任务", "运行中")
+        }
+        
         println("RunAllTasksAction: 所有任务执行完成")
     }
 }

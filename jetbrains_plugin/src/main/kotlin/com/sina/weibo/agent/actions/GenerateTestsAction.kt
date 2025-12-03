@@ -19,9 +19,32 @@ class GenerateTestsAction(private val command: String = "生成测试用例") : 
             println("GenerateTestsAction: 项目为空，返回")
             return
         }
-        println("GenerateTestsAction: 显示信息对话框")
-        Messages.showInfoMessage(project, "正在生成测试用例", "生成中")
-        // 这里添加实际生成测试用例的逻辑
+        
+        try {
+            // 创建VSCode命令参数
+            val params = CoworkflowCommandConverter.createRunTestParams(e)
+            
+            if (params != null) {
+                // 调用VSCode的runTest命令
+                CoworkflowCommandConverter.executeVSCodeCommand(
+                    CoworkflowCommandConverter.VSCodeCommands.RUN_TEST,
+                    e,
+                    params
+                )
+                println("GenerateTestsAction: VSCode命令执行完成")
+            } else {
+                // 回退到原有逻辑
+                println("GenerateTestsAction: 显示信息对话框")
+                Messages.showInfoMessage(project, "正在生成测试用例", "生成中")
+            }
+        } catch (ex: Exception) {
+            println("GenerateTestsAction: 执行生成测试用例操作失败 - ${ex.message}")
+            ex.printStackTrace()
+            // 回退到原有逻辑
+            println("GenerateTestsAction: 显示信息对话框")
+            Messages.showInfoMessage(project, "正在生成测试用例", "生成中")
+        }
+        
         println("GenerateTestsAction: 测试用例生成完成")
     }
 }
