@@ -110,9 +110,10 @@ OPTIONS:
     -m, --mode MODE       Build mode: release (default) or debug
     -c, --clean           Clean before building
     -o, --output DIR      Output directory for build artifacts
-    -p, --platform PLATFORM   Build platform for full build: all (default), windows, linux
-                              Note: Full build only supports Windows and Linux
-                              Use --lite for cross-platform support (including macOS)
+    -p, --platform PLATFORM   Build platform for full build: all (default), windows, linux, macos
+                              Exact full platforms: windows-x64, linux-x64, macos-arm64
+                              Note: --platform macos maps to macos-arm64 (Apple Silicon)
+                              Use --lite for cross-platform support (including Intel macOS)
     -t, --skip-tests      Skip running tests
     --costrict-version VERSION   CoStrict version to build (branch, tag, or commit)
     --vsix FILE           Use existing VSIX file (skip VSCode build)
@@ -121,7 +122,7 @@ OPTIONS:
     --skip-idea           Skip IDEA plugin build
     --skip-nodejs         Skip Node.js preparation
     --lite                Build lite plugin only (without builtin Node.js, cross-platform)
-    --full                Build full plugins only (with builtin Node.js, Windows/Linux only)
+    --full                Build full plugins only (with builtin Node.js, including macOS Apple Silicon)
     -v, --verbose         Enable verbose output
     -n, --dry-run         Show what would be done without executing
     -h, --help            Show this help message
@@ -131,11 +132,13 @@ BUILD MODES:
     debug       Development build with debug symbols and resources
 
 EXAMPLES:
-    $SCRIPT_NAME                           # Build all: full (Win+Linux) + lite (cross-platform)
+    $SCRIPT_NAME                           # Build all: full (Win+Linux+macOS Apple Silicon) + lite (cross-platform)
     $SCRIPT_NAME --platform windows        # Build full plugin for Windows only
     $SCRIPT_NAME --platform linux          # Build full plugin for Linux only
-    $SCRIPT_NAME --lite                    # Build lite plugin only (supports macOS)
-    $SCRIPT_NAME --full                    # Build full plugins only (Windows + Linux)
+    $SCRIPT_NAME --platform macos          # Build full plugin for macOS Apple Silicon only
+    $SCRIPT_NAME --platform macos-arm64    # Build full plugin for macOS Apple Silicon only
+    $SCRIPT_NAME --lite                    # Build lite plugin only (cross-platform, no builtin Node.js)
+    $SCRIPT_NAME --full                    # Build full plugins only (Windows + Linux + macOS Apple Silicon)
     $SCRIPT_NAME --mode debug              # Debug build
     $SCRIPT_NAME --clean vscode            # Clean build VSCode only
     $SCRIPT_NAME --vsix path/to/file.vsix  # Use existing VSIX
@@ -296,17 +299,26 @@ parse_build_args() {
             BUILD_PLATFORM="linux-x64"
             ;;
         "macos")
-            BUILD_PLATFORM="macos-x64"
+            BUILD_PLATFORM="macos-arm64"
             ;;
         "windows-x64"|"linux-x64"|"macos-x64"|"macos-arm64")
             # Already in correct format
             ;;
         *)
             log_error "Invalid build platform: $BUILD_PLATFORM"
-            log_info "Valid platforms: all, windows, linux, macos"
+            log_info "Valid platforms: all, windows, linux, macos, windows-x64, linux-x64, macos-x64, macos-arm64"
             exit 3
             ;;
     esac
+
+    if [[ "$BUILD_TARGET" == "$TARGET_ALL" || "$BUILD_TARGET" == "$TARGET_IDEA" ]]; then
+        if [[ "$LITE_BUILD" != "true" && "$BUILD_PLATFORM" != "all" ]] && ! validate_platform "$BUILD_PLATFORM"; then
+            log_error "Full build does not support platform: $BUILD_PLATFORM"
+            log_info "Supported full build platforms: $(get_supported_platforms)"
+            log_info "For macOS full builds, use --platform macos or --platform macos-arm64"
+            exit 3
+        fi
+    fi
     
     # Set skip flags based on target
     case "$BUILD_TARGET" in
@@ -563,24 +575,35 @@ copy_build_artifacts() {
     if [[ -z "$OUTPUT_DIR" ]]; then
         return 0
     fi
-    
+
     log_step "Copying build artifacts to output directory..."
-    
+
     # Copy VSIX file
     if [[ -n "$VSIX_FILE" && -f "$VSIX_FILE" ]]; then
         copy_files "$VSIX_FILE" "$OUTPUT_DIR/" "VSIX file"
     fi
-    
-    # Copy IDEA plugin
-    if [[ -n "${IDEA_PLUGIN_FILE:-}" && -f "$IDEA_PLUGIN_FILE" ]]; then
+
+    # Copy IDEA full plugins
+    if [[ "$BUILD_PLATFORM" == "all" && -n "${MULTI_PLATFORM_BUILT_FILES:-}" ]]; then
+        for plugin_file in $MULTI_PLATFORM_BUILT_FILES; do
+            if [[ -f "$plugin_file" ]]; then
+                copy_files "$plugin_file" "$OUTPUT_DIR/" "IDEA plugin"
+            fi
+        done
+    elif [[ -n "${IDEA_PLUGIN_FILE:-}" && -f "$IDEA_PLUGIN_FILE" ]]; then
         copy_files "$IDEA_PLUGIN_FILE" "$OUTPUT_DIR/" "IDEA plugin"
     fi
-    
+
+    # Copy IDEA lite plugin if present
+    if [[ -n "${IDEA_LITE_PLUGIN_FILE:-}" && -f "$IDEA_LITE_PLUGIN_FILE" ]]; then
+        copy_files "$IDEA_LITE_PLUGIN_FILE" "$OUTPUT_DIR/" "IDEA lite plugin"
+    fi
+
     # Copy debug resources if in debug mode
     if [[ "$BUILD_MODE" == "$BUILD_MODE_DEBUG" && -d "$PROJECT_ROOT/debug-resources" ]]; then
         copy_files "$PROJECT_ROOT/debug-resources" "$OUTPUT_DIR/" "debug resources"
     fi
-    
+
     log_success "Build artifacts copied to output directory"
 }
 
@@ -642,7 +665,7 @@ show_build_summary() {
     if [[ "$BUILD_TARGET" == "$TARGET_ALL" || "$BUILD_TARGET" == "$TARGET_IDEA" ]]; then
         if [[ "$BUILD_PLATFORM" == "all" ]]; then
             log_info "  1. Install appropriate platform-specific IDEA plugin from: $IDEA_BUILD_DIR/build/distributions/"
-            log_info "  2. Choose plugin based on target platform (windows-x64 or linux-x64)"
+            log_info "  2. Choose plugin based on target platform (windows-x64, linux-x64, or macos-arm64)"
         else
             log_info "  1. Install IDEA plugin from: ${IDEA_PLUGIN_FILE:-$IDEA_BUILD_DIR/build/distributions/}"
             log_info "  2. Configure plugin settings in IDEA"

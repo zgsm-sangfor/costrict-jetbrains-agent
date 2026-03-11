@@ -48,6 +48,9 @@ get_nodejs_platform_archive_filename() {
         "linux-x64")
             echo "node-v${NODEJS_VERSION}-linux-x64.tar.xz"
             ;;
+        "macos-arm64")
+            echo "node-v${NODEJS_VERSION}-darwin-arm64.tar.gz"
+            ;;
         *)
             echo ""
             ;;
@@ -575,6 +578,11 @@ generate_nodejs_config() {
       "file": "node-v$NODEJS_VERSION-linux-x64.tar.xz",
       "extractPath": "node-v$NODEJS_VERSION-linux-x64/bin/",
       "executable": "node"
+    },
+    "macos-arm64": {
+      "file": "node-v$NODEJS_VERSION-darwin-arm64.tar.gz",
+      "extractPath": "node-v$NODEJS_VERSION-darwin-arm64/bin/",
+      "executable": "node"
     }
   }
 }
@@ -600,16 +608,24 @@ generate_nodejs_config_for_platform() {
         "windows-x64")
             platform_config='
     "windows-x64": {
-      "file": "node-v'$NODEJS_VERSION'-win-x64.zip",
-      "extractPath": "node-v'$NODEJS_VERSION'-win-x64/",
+      "file": "node-v'"$NODEJS_VERSION"'-win-x64.zip",
+      "extractPath": "node-v'"$NODEJS_VERSION"'-win-x64/",
       "executable": "node.exe"
     }'
             ;;
         "linux-x64")
             platform_config='
     "linux-x64": {
-      "file": "node-v'$NODEJS_VERSION'-linux-x64.tar.xz",
-      "extractPath": "node-v'$NODEJS_VERSION'-linux-x64/bin/",
+      "file": "node-v'"$NODEJS_VERSION"'-linux-x64.tar.xz",
+      "extractPath": "node-v'"$NODEJS_VERSION"'-linux-x64/bin/",
+      "executable": "node"
+    }'
+            ;;
+        "macos-arm64")
+            platform_config='
+    "macos-arm64": {
+      "file": "node-v'"$NODEJS_VERSION"'-darwin-arm64.tar.gz",
+      "extractPath": "node-v'"$NODEJS_VERSION"'-darwin-arm64/bin/",
       "executable": "node"
     }'
             ;;
@@ -689,6 +705,7 @@ prepare_builtin_nodejs_prebuild_for_platform() {
     if [[ "$target_platform" == "all" ]]; then
         # Download all platforms for universal build
         download_all_nodejs_binaries
+        generate_nodejs_config
     else
         # Download only specific platform
         download_nodejs_binary "$target_platform"
@@ -898,18 +915,21 @@ build_idea_plugin() {
         gradle_props="$gradle_props -PtargetPlatform=all"
     fi
 
+    local expected_plugin_file
+    expected_plugin_file="$(get_expected_idea_plugin_archive_path "$target_platform")"
+    ensure_dir "$(dirname "$expected_plugin_file")"
+    if [[ -f "$expected_plugin_file" ]]; then
+        remove_file "$expected_plugin_file"
+    fi
+
     # Build plugin with platform-specific properties
     execute_cmd "$gradle_cmd $gradle_props buildPlugin --info" "IDEA plugin build"
 
-    # Find generated plugin
-    local plugin_file
-    plugin_file=$(find "$IDEA_BUILD_DIR/build/distributions" \( -name "*.zip" -o -name "*.jar" \) -type f | sort -r | head -n 1)
-
-    if [[ -n "$plugin_file" ]]; then
-        log_success "IDEA plugin built: $plugin_file"
-        export IDEA_PLUGIN_FILE="$plugin_file"
+    if [[ -f "$expected_plugin_file" ]]; then
+        log_success "IDEA plugin built: $expected_plugin_file"
+        export IDEA_PLUGIN_FILE="$expected_plugin_file"
     else
-        log_warn "IDEA plugin file not found in build/distributions"
+        die "Expected IDEA plugin archive was not generated: $expected_plugin_file"
     fi
 
     # Clean temporary resources after successful build
@@ -959,19 +979,21 @@ build_lite_plugin() {
     # Set gradle properties for lite build
     # Note: lite build doesn't use targetPlatform parameter since it's platform-agnostic
     local gradle_props="-PdebugMode=$debug_mode -PtargetPlatform=lite"
+    local expected_plugin_file
+    expected_plugin_file="$(get_expected_idea_plugin_archive_path "lite")"
+    ensure_dir "$(dirname "$expected_plugin_file")"
+    if [[ -f "$expected_plugin_file" ]]; then
+        remove_file "$expected_plugin_file"
+    fi
 
     # Build plugin with lite-specific properties
     execute_cmd "$gradle_cmd $gradle_props buildPlugin --info" "IDEA lite plugin build"
 
-    # Find generated plugin
-    local plugin_file
-    plugin_file=$(find "$IDEA_BUILD_DIR/build/distributions" \( -name "*.zip" -o -name "*.jar" \) -type f | sort -r | head -n 1)
-
-    if [[ -n "$plugin_file" ]]; then
-        log_success "IDEA lite plugin built: $plugin_file"
-        export IDEA_LITE_PLUGIN_FILE="$plugin_file"
+    if [[ -f "$expected_plugin_file" ]]; then
+        log_success "IDEA lite plugin built: $expected_plugin_file"
+        export IDEA_LITE_PLUGIN_FILE="$expected_plugin_file"
     else
-        log_warn "IDEA lite plugin file not found in build/distributions"
+        die "Expected IDEA lite plugin archive was not generated: $expected_plugin_file"
     fi
 
     # Clean temporary resources after successful build
@@ -1086,17 +1108,73 @@ get_plugin_name_with_platform() {
     local platform="$3"
     local platform_identifier=$(get_platform_identifier "$platform")
 
-    if [[ -n "$version" && -n "$platform_identifier" && "$platform_identifier" != "unknown" ]]; then
+    if [[ -z "$version" ]]; then
+        echo "${base_name}"
+    elif [[ -n "$platform_identifier" && "$platform_identifier" != "unknown" ]]; then
         echo "${base_name}-${version}-${platform_identifier}"
     else
-        echo "${base_name}"
+        echo "${base_name}-${version}"
     fi
 }
+
+get_idea_plugin_project_name() {
+    local settings_file=""
+    local project_name=""
+
+    if [[ -f "$IDEA_BUILD_DIR/settings.gradle.kts" ]]; then
+        settings_file="$IDEA_BUILD_DIR/settings.gradle.kts"
+    elif [[ -f "$IDEA_BUILD_DIR/settings.gradle" ]]; then
+        settings_file="$IDEA_BUILD_DIR/settings.gradle"
+    fi
+
+    if [[ -n "$settings_file" ]]; then
+        project_name="$(sed -n 's/^[[:space:]]*rootProject\.name[[:space:]]*=[[:space:]]*"\([^"]*\)".*$/\1/p' "$settings_file" | head -n 1 | tr -d '\r')"
+    fi
+
+    if [[ -z "$project_name" ]]; then
+        die "Unable to determine IDEA plugin project name from settings.gradle(.kts)"
+    fi
+
+    echo "$project_name"
+}
+
+get_idea_plugin_version() {
+    local gradle_properties_file="$IDEA_BUILD_DIR/gradle.properties"
+    local package_json_file="$PROJECT_ROOT/deps/costrict/src/package.json"
+    local plugin_version=""
+
+    if [[ -f "$gradle_properties_file" ]]; then
+        plugin_version="$(sed -n 's/^[[:space:]]*pluginVersion[[:space:]]*=[[:space:]]*\(.*\)$/\1/p' "$gradle_properties_file" | head -n 1 | tr -d '\r')"
+    fi
+
+    if [[ -z "$plugin_version" && -f "$package_json_file" ]]; then
+        plugin_version="$(sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*$/\1/p' "$package_json_file" | head -n 1 | tr -d '\r')"
+    fi
+
+    if [[ -z "$plugin_version" ]]; then
+        die "Unable to determine IDEA plugin version from gradle.properties or package.json"
+    fi
+
+    echo "$plugin_version"
+}
+
+get_expected_idea_plugin_archive_path() {
+    local target_platform="${1:-all}"
+    local project_name
+    project_name="$(get_idea_plugin_project_name)"
+    local plugin_version
+    plugin_version="$(get_idea_plugin_version)"
+    local archive_name
+    archive_name="$(get_plugin_name_with_platform "$project_name" "$plugin_version" "$target_platform")"
+
+    echo "$IDEA_BUILD_DIR/build/distributions/${archive_name}.zip"
+}
+
 
 get_supported_platforms() {
     # Only platforms with pre-built Node.js binaries for full plugin
     # Lite plugin can support more platforms via online download
-    echo "windows-x64 linux-x64"
+    echo "windows-x64 linux-x64 macos-arm64"
 }
 
 validate_platform() {

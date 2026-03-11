@@ -71,6 +71,19 @@ This directory contains the build and maintenance scripts for the RunVSAgent pro
 ./scripts/build.sh --output ./dist
 ```
 
+### IDEA Packaging
+```bash
+# Build macOS Apple Silicon full plugin with builtin Node.js
+./scripts/build.sh --full --platform macos
+
+# Explicit Apple Silicon full build
+./scripts/build.sh --full --platform macos-arm64
+
+# Build all full plugin variants (Windows, Linux, macOS Apple Silicon)
+./scripts/build.sh --full --platform all
+```
+
+
 ### Testing
 ```bash
 # Run all tests
@@ -171,14 +184,19 @@ scripts/
 
 ## Platform Support
 
-### Linux/macOS
-Full native support with bash scripts.
+### Build Scripts
+- **Linux/macOS**: Full native support with bash scripts.
+- **Windows**:
+  - **PowerShell wrapper**: `run.ps1` provides Windows-friendly interface
+  - **WSL support**: Automatically detects and uses WSL if available
+  - **Git Bash support**: Falls back to Git Bash if WSL not available
+  - **Native PowerShell**: Limited functionality, bash recommended
 
-### Windows
-- **PowerShell wrapper**: `run.ps1` provides Windows-friendly interface
-- **WSL support**: Automatically detects and uses WSL if available
-- **Git Bash support**: Falls back to Git Bash if WSL not available
-- **Native PowerShell**: Limited functionality, bash recommended
+### IDEA Plugin Packaging
+- **Full plugin packages with builtin Node.js**: `windows-x64`, `linux-x64`, `macos-arm64`
+- **macOS alias**: `./scripts/build.sh --platform macos` builds the Apple Silicon full package (`macos-arm64`)
+- **Intel macOS full packages**: `macos-x64` full packages are not produced in this build flow
+- **Lite plugin packages**: remain cross-platform and rely on online Node.js download when needed
 
 ## Troubleshooting
 
