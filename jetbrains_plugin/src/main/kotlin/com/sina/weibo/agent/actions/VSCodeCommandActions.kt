@@ -8,6 +8,61 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.sina.weibo.agent.ipc.proxy.LazyPromise
+
+/**
+ * Executes a VSCode command with the given command ID and returns the result.
+ * This function uses the RPC protocol to communicate with the extension host.
+ *
+ * @param commandId The identifier of the command to execute
+ * @param project The current project context
+ * @param args Optional arguments to pass to the command
+ * @return LazyPromise containing the result, or null if execution fails
+ */
+fun executeCommandWithResult(commandId: String, project: Project?, vararg args: Any?): LazyPromise? {
+    val logger = Logger.getInstance("VSCodeCommandActions")
+    logger.info("🔍 executeCommandWithResult called with commandId: $commandId")
+
+    if (project == null) {
+        logger.warn("❌ Project is null, cannot execute command")
+        return null
+    }
+
+    try {
+        val pluginContext = project.getService(com.sina.weibo.agent.core.PluginContext::class.java)
+        if (pluginContext == null) {
+            logger.warn("❌ PluginContext not found")
+            return null
+        }
+
+        val rpcProtocol = pluginContext.getRPCProtocol()
+        if (rpcProtocol == null) {
+            logger.warn("❌ RPC Protocol not found")
+            return null
+        }
+
+        val proxy = rpcProtocol.getProxy(com.sina.weibo.agent.core.ServiceProxyRegistry.ExtHostContext.ExtHostCommands)
+        if (proxy == null) {
+            logger.warn("❌ ExtHostCommands proxy not found")
+            return null
+        }
+
+        logger.info("🔍 Executing command via RPC with result: $commandId, argsCount=${args.size}, args=${args.contentToString()}")
+
+        val result = if (args.isNotEmpty()) {
+            proxy.executeContributedCommand(commandId, args.toList())
+        } else {
+            proxy.executeContributedCommand(commandId)
+        }
+
+        logger.info("✅ Command sent to Extension Host with result return: $commandId")
+        return result
+
+    } catch (e: Exception) {
+        logger.error("❌ Error executing command: $commandId", e)
+        return null
+    }
+}
 
 /**
  * Executes a VSCode command with the given command ID.

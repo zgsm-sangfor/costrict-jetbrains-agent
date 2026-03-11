@@ -74,7 +74,7 @@ It supports users in conducting code checks on functions, selected code lines, c
    
    <!-- Change notes for the plugin -->
    <change-notes><![CDATA[
-       <h3>Version 2.4.3</h3>
+       <h3>Version 2.4.4</h3>
         <a href="https://github.com/zgsm-ai/costrict/blob/main/CHANGELOG.md">changelog</a>
    ]]></change-notes>
 
@@ -116,6 +116,14 @@ It supports users in conducting code checks on functions, selected code lines, c
 <!--            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt S" />-->
 <!--        </action>-->
 
+        <!-- AI Generate Commit Message Action in VCS Commit Dialog -->
+        <action id="CoStrict.GenerateCommitMessage"
+                class="ai.costrict.extensions.plugin.costrict.GenerateCommitMessageAction"
+                text="Generate with CoStrict"
+                description="Generate AI-powered commit message"
+                icon="/icons/costrict_logo_16px.svg">
+            <add-to-group group-id="Vcs.MessageActionGroup" anchor="first"/>
+        </action>
 
         <!-- Dynamic toolbar group - buttons will be populated based on current extension -->
         <group id="CoStrict.ToolbarGroup">
