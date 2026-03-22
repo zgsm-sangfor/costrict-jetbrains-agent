@@ -71,7 +71,7 @@ class ThemeManager : Disposable {
      * @param resourceRoot Theme resource root directory
      */
     fun initialize(resourceRoot: String) {
-        logger.info("Initializing theme manager, resource root: $resourceRoot")
+        logger.debug("Initializing theme manager, resource root: $resourceRoot")
         
         // Set theme resource directory using static method
         themeResourceDir = getThemeResourceDir(resourceRoot)
@@ -81,7 +81,7 @@ class ThemeManager : Disposable {
             return
         }
         
-        logger.info("Theme resource directory set: $themeResourceDir")
+        logger.debug("Theme resource directory set: $themeResourceDir")
         
         // Detect current theme at initialization
         updateCurrentThemeStatus()
@@ -92,7 +92,7 @@ class ThemeManager : Disposable {
         // Register theme change listener
         messageBusConnection = ApplicationManager.getApplication().messageBus.connect()
         messageBusConnection?.subscribe(LafManagerListener.TOPIC, LafManagerListener {
-            logger.info("Detected IDE theme change")
+            logger.debug("Detected IDE theme change")
             val oldIsDarkTheme = isDarkTheme
             val oldConfig = currentThemeConfig
             
@@ -105,7 +105,7 @@ class ThemeManager : Disposable {
             }
         })
         
-        logger.info("Theme manager initialization completed, current theme: ${if (isDarkTheme) "dark" else "light"}")
+        logger.debug("Theme manager initialization completed, current theme: ${if (isDarkTheme) "dark" else "light"}")
     }
 
     /**
@@ -126,7 +126,7 @@ class ThemeManager : Disposable {
             if (background != null) {
                 val brightness = (0.299 * background.red + 0.587 * background.green + 0.114 * background.blue) / 255.0
                 isDarkTheme = brightness < 0.5
-                logger.info("Detected ${if (isDarkTheme) "dark" else "light"} theme: brightness is $brightness")
+                logger.debug("Detected ${if (isDarkTheme) "dark" else "light"} theme: brightness is $brightness")
             } else {
                 // Default to dark theme
                 isDarkTheme = true
@@ -378,9 +378,9 @@ class ThemeManager : Disposable {
      */
     private fun loadVscodeThemeStyle(vscodeThemeFile: File): String? {
         try {
-            logger.info("Attempting to load VSCode theme style file: ${vscodeThemeFile.absolutePath}")
+            logger.debug("Attempting to load VSCode theme style file: ${vscodeThemeFile.absolutePath}")
             val content = vscodeThemeFile.readText(StandardCharsets.UTF_8)
-            logger.info("Successfully loaded VSCode theme style, size: ${content.length} bytes")
+            logger.debug("Successfully loaded VSCode theme style, size: ${content.length} bytes")
             return content
         } catch (e: Exception) {
             logger.error("Failed to read VSCode theme style file: ${vscodeThemeFile.absolutePath}", e)
@@ -449,7 +449,7 @@ class ThemeManager : Disposable {
             val oldConfig = currentThemeConfig
             currentThemeConfig = converted
 
-            logger.info("Loaded and converted theme configuration: $themeFileName (theme exists: ${themeFile?.exists() == true}, css exists: $cssExists)")
+            logger.debug("Loaded and converted theme configuration: $themeFileName (theme exists: ${themeFile?.exists() == true}, css exists: $cssExists)")
 
             // Notify listeners when configuration changes
             if (oldConfig?.toString() != converted.toString()) {
@@ -470,7 +470,7 @@ class ThemeManager : Disposable {
     private fun notifyThemeChangeListeners() {
         val config = currentThemeConfig ?: return
         
-        logger.info("Notifying ${themeChangeListeners.size} theme change listeners")
+        logger.debug("Notifying ${themeChangeListeners.size} theme change listeners")
         themeChangeListeners.forEach { listener ->
             try {
                 listener.onThemeChanged(config, isDarkTheme)
@@ -486,13 +486,13 @@ class ThemeManager : Disposable {
      */
     fun addThemeChangeListener(listener: ThemeChangeListener) {
         themeChangeListeners.add(listener)
-        logger.info("Added theme change listener, current listener count: ${themeChangeListeners.size}")
+        logger.debug("Added theme change listener, current listener count: ${themeChangeListeners.size}")
         
         // If theme configuration already exists, immediately notify new listener
         currentThemeConfig?.let {
             try {
                 listener.onThemeChanged(it, isDarkTheme)
-                logger.info("Notified newly added listener of current theme configuration")
+                logger.debug("Notified newly added listener of current theme configuration")
             } catch (e: Exception) {
                 logger.error("Error notifying new listener of current theme configuration", e)
             }
@@ -505,7 +505,7 @@ class ThemeManager : Disposable {
      */
     fun removeThemeChangeListener(listener: ThemeChangeListener) {
         themeChangeListeners.remove(listener)
-        logger.info("Removed theme change listener, remaining listener count: ${themeChangeListeners.size}")
+        logger.debug("Removed theme change listener, remaining listener count: ${themeChangeListeners.size}")
     }
     
     /**
@@ -513,7 +513,7 @@ class ThemeManager : Disposable {
      * Will reload and notify listeners even if theme has not changed
      */
     fun reloadThemeConfig() {
-        logger.info("Manually reloading theme configuration")
+        logger.debug("Manually reloading theme configuration")
         loadThemeConfig()
     }
     
@@ -534,7 +534,7 @@ class ThemeManager : Disposable {
     }
     
     override fun dispose() {
-        logger.info("Releasing theme manager resources")
+        logger.debug("Releasing theme manager resources")
         
         // Clear listener list
         themeChangeListeners.clear()
@@ -555,7 +555,7 @@ class ThemeManager : Disposable {
         // Reset singleton
         resetInstance()
         
-        logger.info("Theme manager resources released")
+        logger.debug("Theme manager resources released")
     }
     
     companion object {

@@ -193,23 +193,23 @@ class MainThreadDebugService : MainThreadDebugServiceShape {
     private val logger = Logger.getInstance(MainThreadDebugService::class.java)
 
     override fun registerDebugTypes(debugTypes: List<String>) {
-        logger.info("Registering debug types: $debugTypes")
+        logger.debug("Registering debug types: $debugTypes")
     }
     
     override fun sessionCached(sessionID: String) {
-        logger.info("Session cached: $sessionID")
+        logger.debug("Session cached: $sessionID")
     }
     
     override fun acceptDAMessage(handle: Int, message: Any) {
-        logger.info("Received debug adapter message: handle=$handle, message=$message")
+        logger.debug("Received debug adapter message: handle=$handle, message=$message")
     }
     
     override fun acceptDAError(handle: Int, name: String, message: String, stack: String?) {
-        logger.info("Received debug adapter error: handle=$handle, name=$name, message=$message, stack=$stack")
+        logger.info("Received debug adapter error: handle=$handle, name=$name, message=$message")
     }
     
     override fun acceptDAExit(handle: Int, code: Int?, signal: String?) {
-        logger.info("Received debug adapter exit: handle=$handle, code=$code, signal=$signal")
+        logger.debug("Received debug adapter exit: handle=$handle, code=$code, signal=$signal")
     }
     
     override fun registerDebugConfigurationProvider(
@@ -220,27 +220,25 @@ class MainThreadDebugService : MainThreadDebugServiceShape {
         hasResolve2Method: Boolean,
         handle: Int
     ): Any {
-        logger.info("Registering debug configuration provider: type=$type, triggerKind=$triggerKind, " +
-                "hasProvideMethod=$hasProvideMethod, hasResolveMethod=$hasResolveMethod, " +
-                "hasResolve2Method=$hasResolve2Method, handle=$handle")
+        logger.debug("Registering debug configuration provider: type=$type, triggerKind=$triggerKind, handle=$handle")
         return Unit
     }
     
     override fun registerDebugAdapterDescriptorFactory(type: String, handle: Int): Any {
-        logger.info("Registering debug adapter descriptor factory: type=$type, handle=$handle")
+        logger.debug("Registering debug adapter descriptor factory: type=$type, handle=$handle")
         return Unit
     }
     
     override fun unregisterDebugConfigurationProvider(handle: Int) {
-        logger.info("Unregistering debug configuration provider: handle=$handle")
+        logger.debug("Unregistering debug configuration provider: handle=$handle")
     }
     
     override fun unregisterDebugAdapterDescriptorFactory(handle: Int) {
-        logger.info("Unregistering debug adapter descriptor factory: handle=$handle")
+        logger.debug("Unregistering debug adapter descriptor factory: handle=$handle")
     }
     
     override fun startDebugging(folder: URI?, nameOrConfig: Any, options: Any): Any {
-        logger.info("Starting debugging: folder=$folder, nameOrConfig=$nameOrConfig, options=$options")
+        logger.info("Starting debugging: folder=$folder")
         return true
     }
     
@@ -250,25 +248,25 @@ class MainThreadDebugService : MainThreadDebugServiceShape {
     }
     
     override fun setDebugSessionName(id: String, name: String) {
-        logger.info("Setting debug session name: id=$id, name=$name")
+        logger.debug("Setting debug session name: id=$id, name=$name")
     }
     
     override fun customDebugAdapterRequest(id: String, command: String, args: Any): Any {
-        logger.info("Custom debug adapter request: id=$id, command=$command, args=$args")
+        logger.debug("Custom debug adapter request: id=$id, command=$command")
         return Unit
     }
     
     override fun getDebugProtocolBreakpoint(id: String, breakpoinId: String): Any? {
-        logger.info("Getting debug protocol breakpoint: id=$id, breakpoinId=$breakpoinId")
+        logger.debug("Getting debug protocol breakpoint: id=$id, breakpoinId=$breakpoinId")
         return Unit
     }
     
     override fun appendDebugConsole(value: String) {
-        logger.info("Appending to debug console: $value")
+        logger.trace("Appending to debug console: ${value.take(100)}")
     }
     
     override fun registerBreakpoints(breakpoints: List<Any>): Any {
-        logger.info("Registering breakpoints: ${breakpoints.size} total")
+        logger.debug("Registering breakpoints: ${breakpoints.size} total")
         return Unit
     }
     
@@ -277,26 +275,26 @@ class MainThreadDebugService : MainThreadDebugServiceShape {
         functionBreakpointIds: List<String>,
         dataBreakpointIds: List<String>
     ): Any {
-        logger.info("Unregistering breakpoints: ${breakpointIds.size} regular, " +
+        logger.debug("Unregistering breakpoints: ${breakpointIds.size} regular, " +
                 "${functionBreakpointIds.size} function, " +
                 "${dataBreakpointIds.size} data breakpoints")
         return Unit
     }
     
     override fun registerDebugVisualizer(extensionId: String, id: String) {
-        logger.info("Registering debug visualizer: extensionId=$extensionId, id=$id")
+        logger.debug("Registering debug visualizer: extensionId=$extensionId, id=$id")
     }
     
     override fun unregisterDebugVisualizer(extensionId: String, id: String) {
-        logger.info("Unregistering debug visualizer: extensionId=$extensionId, id=$id")
+        logger.debug("Unregistering debug visualizer: extensionId=$extensionId, id=$id")
     }
     
     override fun registerDebugVisualizerTree(treeId: String, canEdit: Boolean) {
-        logger.info("Registering debug visualizer tree: treeId=$treeId, canEdit=$canEdit")
+        logger.debug("Registering debug visualizer tree: treeId=$treeId, canEdit=$canEdit")
     }
     
     override fun unregisterDebugVisualizerTree(treeId: String) {
-        logger.info("Unregistering debug visualizer tree: treeId=$treeId")
+        logger.debug("Unregistering debug visualizer tree: treeId=$treeId")
     }
 
     override fun dispose() {

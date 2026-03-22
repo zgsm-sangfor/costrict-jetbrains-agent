@@ -44,7 +44,7 @@ class DiffViewHandler(private val project: Project) {
         val title = args[0]?.toString() ?: "差异视图"
         @Suppress("UNCHECKED_CAST")
         val changes = args[1] as? List<List<Any>> ?: emptyList()
-        logger.info("🔍 处理 vscode.changes 命令: $title, 变更数量: ${changes.size}")
+        logger.debug("🔍 处理 vscode.changes 命令: $title, 变更数量: ${changes.size}")
         
         try {
             for ((index, change) in changes.withIndex()) {
@@ -57,12 +57,12 @@ class DiffViewHandler(private val project: Project) {
                 val beforeUri = change[1].toString()
                 val afterUri = change[2].toString()
                 
-                logger.info("🔍 处理变更 $index: 原文件=$originalUri, Before=$beforeUri, After=$afterUri")
+                logger.debug("🔍 处理变更 $index: 原文件=$originalUri, Before=$beforeUri, After=$afterUri")
                 
                 // 检查URI scheme兼容性
                 val beforeScheme = beforeUri.substringBefore(":")
                 val afterScheme = afterUri.substringBefore(":")
-                logger.info("🔍 URI scheme检查 - Before: $beforeScheme, After: $afterScheme")
+                logger.debug("🔍 URI scheme检查 - Before: $beforeScheme, After: $afterScheme")
                 
                 if (!COMPATIBLE_SCHEMES.contains(beforeScheme)) {
                     logger.warn("⚠️ Before URI使用了未知的scheme: $beforeScheme，期望: $COMPATIBLE_SCHEMES")
@@ -107,7 +107,7 @@ class DiffViewHandler(private val project: Project) {
         extension: String
     ) {
         try {
-            logger.info("🔍 开始Base64解码 - Before长度: ${beforeBase64.length}, After长度: ${afterBase64.length}")
+            logger.debug("🔍 开始Base64解码 - Before长度: ${beforeBase64.length}, After长度: ${afterBase64.length}")
             
             // 添加Base64内容验证
             if (beforeBase64.isEmpty()) {
@@ -151,8 +151,8 @@ class DiffViewHandler(private val project: Project) {
                 ""
             }
             
-            logger.info("🔍 解码结果 - Before: '${before.take(50)}...', After: '${after.take(50)}...'")
-            logger.info("🔍 解码内容长度 - Before: ${before.length}, After: ${after.length}")
+            logger.debug("🔍 解码结果 - Before: '${before.take(50)}...', After: '${after.take(50)}...'")
+            logger.debug("🔍 解码内容长度 - Before: ${before.length}, After: ${after.length}")
             
             val factory = DiffContentFactory.getInstance()
             val fileTypeManager = FileTypeManager.getInstance()
@@ -160,13 +160,13 @@ class DiffViewHandler(private val project: Project) {
             // 使用增强的文件类型检测方法
             val fileType = detectFileType(extension, relativePath, before)
             
-            logger.info("🔍 文件类型检测 - 扩展名: '$extension', 相对路径: '$relativePath', 最终文件类型: ${fileType.name} (描述: ${fileType.description})")
+            logger.debug("🔍 文件类型检测 - 扩展名: '$extension', 相对路径: '$relativePath', 最终文件类型: ${fileType.name} (描述: ${fileType.description})")
             
             // 确保文件类型正确应用到差异内容
             val beforeContent = factory.create(before, fileType)
             val afterContent = factory.create(after, fileType)
             
-            logger.info("🔍 差异内容创建 - Before内容类型: ${beforeContent.contentType?.name ?: "null"}, After内容类型: ${afterContent.contentType?.name ?: "null"}")
+            logger.debug("🔍 差异内容创建 - Before内容类型: ${beforeContent.contentType?.name ?: "null"}, After内容类型: ${afterContent.contentType?.name ?: "null"}")
             
             // 验证内容类型是否正确设置
             if (beforeContent.contentType?.name != fileType.name) {
@@ -186,26 +186,26 @@ class DiffViewHandler(private val project: Project) {
             
             // 检查当前线程是否为 EDT
             val isEdt = ApplicationManager.getApplication().isDispatchThread
-            logger.info("🔍 当前线程是否为 EDT: $isEdt")
+            logger.debug("🔍 当前线程是否为 EDT: $isEdt")
             
             if (isEdt) {
                 // 如果在 EDT 线程中，直接显示差异
-                logger.info("🔍 在 EDT 线程中直接显示差异视图")
+                logger.debug("🔍 在 EDT 线程中直接显示差异视图")
                 DiffManager.getInstance().showDiff(project, request)
             } else {
                 // 如果不在 EDT 线程中，使用 invokeLater 切换到 EDT
-                logger.info("🔍 不在 EDT 线程中，使用 invokeLater 切换到 EDT 显示差异视图")
+                logger.debug("🔍 不在 EDT 线程中，使用 invokeLater 切换到 EDT 显示差异视图")
                 ApplicationManager.getApplication().invokeLater {
                     try {
                         DiffManager.getInstance().showDiff(project, request)
-                        logger.info("✅ 成功在 EDT 线程中打开差异视图: $relativePath")
+                        logger.debug("✅ 成功在 EDT 线程中打开差异视图: $relativePath")
                     } catch (e: Exception) {
                         logger.error("❌ 在 EDT 线程中打开差异视图失败: $relativePath", e)
                     }
                 }
             }
             
-            logger.info("✅ 成功调度差异视图: $relativePath")
+            logger.debug("✅ 成功调度差异视图: $relativePath")
             
         } catch (e: Exception) {
             logger.error("❌ 打开差异视图失败: $relativePath", e)
@@ -217,7 +217,7 @@ class DiffViewHandler(private val project: Project) {
      * 格式: ${DIFF_VIEW_URI_SCHEME}:${relativePath}?query
      */
     private fun extractRelativePath(uri: String): String {
-        logger.info("🔍 提取相对路径，URI: $uri")
+        logger.debug("🔍 提取相对路径，URI: $uri")
         
         // 首先移除scheme部分，支持多种兼容scheme
         var withoutScheme = uri
@@ -236,7 +236,7 @@ class DiffViewHandler(private val project: Project) {
             logger.warn("⚠️ 无法从URI提取相对路径，使用默认值: $uri")
             "unknown"
         }
-        logger.info("🔍 提取的相对路径: $result")
+        logger.debug("🔍 提取的相对路径: $result")
         return result
     }
     
@@ -247,11 +247,11 @@ class DiffViewHandler(private val project: Project) {
      * 2. 标准URI格式：cline-diff:index.html?BASE64_CONTENT
      */
     private fun extractBase64Content(uri: String): String {
-        logger.info("🔍 提取Base64内容，URI: $uri")
+        logger.debug("🔍 提取Base64内容，URI: $uri")
         
         // 检查是否是VSCode对象格式（包含{$mid=和query=）
         if (uri.contains("{\$mid=") && uri.contains("query=")) {
-            logger.info("🔍 检测到VSCode对象格式，使用正则表达式提取query字段")
+            logger.debug("🔍 检测到VSCode对象格式，使用正则表达式提取query字段")
             
             // 使用正则表达式提取query字段的值
             val queryPattern = "query=([^}]+)".toRegex()
@@ -259,17 +259,17 @@ class DiffViewHandler(private val project: Project) {
             
             if (matchResult != null) {
                 var result = matchResult.groupValues[1].trim()
-                logger.info("🔍 从VSCode对象格式提取的Base64内容长度: ${result.length}")
+                logger.debug("🔍 从VSCode对象格式提取的Base64内容长度: ${result.length}")
                 
                 // 修复Base64填充问题
                 result = fixBase64Padding(result)
-                logger.info("🔍 修复Base64填充后长度: ${result.length}")
+                logger.debug("🔍 修复Base64填充后长度: ${result.length}")
                 
                 // 验证Base64格式
                 return try {
                     // 尝试解码以验证Base64格式正确性，明确指定UTF-8编码
                     String(Base64.getDecoder().decode(result), StandardCharsets.UTF_8)
-                    logger.info("✅ Base64格式验证成功")
+                    logger.debug("✅ Base64格式验证成功")
                     result
                 } catch (e: IllegalArgumentException) {
                     logger.error("❌ Base64格式验证失败: 无效的Base64格式 - ${e.message}", e)
@@ -277,7 +277,7 @@ class DiffViewHandler(private val project: Project) {
                         // 尝试修复Base64填充问题后再次验证
                         val fixedResult = fixBase64Padding(result)
                         String(Base64.getDecoder().decode(fixedResult), StandardCharsets.UTF_8)
-                        logger.info("✅ Base64格式验证成功(修复后)")
+                        logger.debug("✅ Base64格式验证成功(修复后)")
                         fixedResult
                     } catch (e2: Exception) {
                         logger.error("❌ Base64格式验证失败(修复后): ${e2.message}", e2)
@@ -294,7 +294,7 @@ class DiffViewHandler(private val project: Project) {
         }
         
         // 回退到标准URI格式解析
-        logger.info("🔍 使用标准URI格式解析")
+        logger.debug("🔍 使用标准URI格式解析")
         val queryStart = uri.indexOf("?")
         var result = if (queryStart >= 0 && queryStart < uri.length - 1) {
             uri.substring(queryStart + 1)
@@ -305,7 +305,7 @@ class DiffViewHandler(private val project: Project) {
         
         // 修复Base64填充问题
         result = fixBase64Padding(result)
-        logger.info("🔍 提取的Base64内容长度: ${result.length}")
+        logger.debug("🔍 提取的Base64内容长度: ${result.length}")
         return result
     }
     
@@ -324,7 +324,7 @@ class DiffViewHandler(private val project: Project) {
             // 需要添加填充字符
             val paddingNeeded = 4 - remainder
             val fixedString = base64String + "=".repeat(paddingNeeded)
-            logger.info("🔍 Base64填充修复: 原长度=${base64String.length}, 新长度=${fixedString.length}, 添加填充=${paddingNeeded}")
+            logger.debug("🔍 Base64填充修复: 原长度=${base64String.length}, 新长度=${fixedString.length}, 添加填充=${paddingNeeded}")
             fixedString
         }
     }
@@ -346,7 +346,7 @@ class DiffViewHandler(private val project: Project) {
                 if (specialFileTypeName != null) {
                     val specialFileType = fileTypeManager.findFileTypeByName(specialFileTypeName)
                     if (specialFileType != null && specialFileType.name != "UNKNOWN") {
-                        logger.info("🔍 步骤0 - VSCode特殊文件类型映射: ${specialFileType.name} (语言ID: '$vsCodeLanguageId')")
+                        logger.debug("🔍 步骤0 - VSCode特殊文件类型映射: ${specialFileType.name} (语言ID: '$vsCodeLanguageId')")
                         return specialFileType
                     }
                 }
@@ -357,7 +357,7 @@ class DiffViewHandler(private val project: Project) {
             if (mappedExtension != null) {
                 val mappedFileType = fileTypeManager.getFileTypeByExtension(mappedExtension)
                 if (mappedFileType.name != "UNKNOWN" && mappedFileType.name != "PLAIN_TEXT") {
-                    logger.info("🔍 步骤0 - VSCode语言映射检测: ${mappedFileType.name} (语言ID: '$vsCodeLanguageId', 映射扩展名: '$mappedExtension')")
+                    logger.debug("🔍 步骤0 - VSCode语言映射检测: ${mappedFileType.name} (语言ID: '$vsCodeLanguageId', 映射扩展名: '$mappedExtension')")
                     return mappedFileType
                 }
             }
@@ -365,12 +365,12 @@ class DiffViewHandler(private val project: Project) {
         
         // 1. 首先尝试通过扩展名检测
         var fileType = fileTypeManager.getFileTypeByExtension(extension)
-        logger.info("🔍 步骤1 - 扩展名检测: ${fileType.name} (扩展名: '$extension')")
+        logger.debug("🔍 步骤1 - 扩展名检测: ${fileType.name} (扩展名: '$extension')")
         
         // 2. 如果扩展名检测失败或为UNKNOWN，尝试文件名模式
         if (fileType.name == "UNKNOWN" || fileType.name == "PLAIN_TEXT") {
             fileType = fileTypeManager.getFileTypeByFileName(filePath)
-            logger.info("🔍 步骤2 - 文件名检测: ${fileType.name} (路径: '$filePath')")
+            logger.debug("🔍 步骤2 - 文件名检测: ${fileType.name} (路径: '$filePath')")
         }
         
         // 3. 特殊处理常见的前端文件类型（现在通过VSCode映射处理）
@@ -380,19 +380,19 @@ class DiffViewHandler(private val project: Project) {
                 "jsx" -> fileTypeManager.getFileTypeByExtension("javascript")
                 else -> fileType
             }
-            logger.info("🔍 步骤3 - 传统特殊文件类型处理: ${fileType.name} (扩展名: '$extension')")
+            logger.debug("🔍 步骤3 - 传统特殊文件类型处理: ${fileType.name} (扩展名: '$extension')")
         }
         
         // 4. 内容启发式检测 - 检查文件内容特征
         if (fileType.name == "UNKNOWN" || fileType.name == "PLAIN_TEXT") {
             fileType = detectFileTypeByContent(content, extension, filePath)
-            logger.info("🔍 步骤4 - 内容启发式检测: ${fileType.name}")
+            logger.debug("🔍 步骤4 - 内容启发式检测: ${fileType.name}")
         }
         
         // 5. 如果仍然无法识别，使用更智能的回退策略
         if (fileType.name == "UNKNOWN" || fileType.name == "PLAIN_TEXT") {
             fileType = getSmartFallbackFileType(extension, filePath)
-            logger.info("🔍 步骤5 - 智能回退: ${fileType.name}")
+            logger.debug("🔍 步骤5 - 智能回退: ${fileType.name}")
         }
         
         return fileType
@@ -417,10 +417,10 @@ class DiffViewHandler(private val project: Project) {
             return try {
                 // 简单的JSON验证
                 com.google.gson.JsonParser.parseString(content)
-                logger.info("🔍 内容检测为JSON格式")
+                logger.debug("🔍 内容检测为JSON格式")
                 fileTypeManager.getFileTypeByExtension("json")
             } catch (e: Exception) {
-                logger.info("🔍 内容不是有效的JSON格式")
+                logger.debug("🔍 内容不是有效的JSON格式")
                 fileTypeManager.getFileTypeByExtension(extension)
             }
         }
@@ -496,10 +496,10 @@ class DiffViewHandler(private val project: Project) {
                 extension
             }
             
-            logger.info("🔍 扩展名提取 - 文件路径: '$filePath', 文件名: '$fileName', 提取的扩展名: '$finalExtension'")
+            logger.debug("🔍 扩展名提取 - 文件路径: '$filePath', 文件名: '$fileName', 提取的扩展名: '$finalExtension'")
             finalExtension
         } else {
-            logger.info("🔍 扩展名提取 - 文件路径: '$filePath', 未找到扩展名，使用默认值: 'txt'")
+            logger.debug("🔍 扩展名提取 - 文件路径: '$filePath', 未找到扩展名，使用默认值: 'txt'")
             "txt" // 默认为文本文件
         }
     }

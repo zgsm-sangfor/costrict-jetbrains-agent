@@ -104,7 +104,7 @@ class EditorAndDocManager(val project: Project) : Disposable {
             }
 
             override fun fileClosed(source: FileEditorManager, cFile: VirtualFile) {
-                logger.info("file closed $cFile")
+                logger.debug("file closed $cFile")
                 var diff = false
                 var path = cFile.path
                 if(cFile is ChainDiffVirtualFile){
@@ -119,7 +119,7 @@ class EditorAndDocManager(val project: Project) : Disposable {
                 }
                 getEditorHandleByUri(URI.file(path),diff)?.let { handle ->
                     handle.setActive(false)
-                    logger.info("file closed handle $handle")
+                    logger.debug("file closed handle $handle")
                     removeEditor(handle.id)
                 }
             }

@@ -88,7 +88,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
     fun initializeThemeManager(resourceRoot: String) {
         if (isDisposed or themeInitialized) return
         
-        logger.info("Initialize theme manager")
+        logger.debug("Initialize theme manager")
         val themeManager = ThemeManager.getInstance()
         themeManager.initialize(resourceRoot)
         themeManager.addThemeChangeListener(this)
@@ -99,7 +99,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
      * Implement ThemeChangeListener interface, handle theme change events
      */
     override fun onThemeChanged(themeConfig: JsonObject, isDarkTheme: Boolean) {
-        logger.info("Received theme change event, isDarkTheme: $isDarkTheme, config: ${themeConfig.size()}")
+        logger.debug("Received theme change event, isDarkTheme: $isDarkTheme, config: ${themeConfig.size()}")
         this.currentThemeConfig = themeConfig
         this.isDarkTheme = isDarkTheme
         
@@ -111,7 +111,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
      * Send theme config to all WebView instances
      */
     private fun sendThemeConfigToWebViews(themeConfig: JsonObject) {
-        logger.info("Send theme config to WebView")
+        logger.debug("Send theme config to WebView")
         
 //        getAllWebViews().forEach { webView ->
             try {
@@ -138,7 +138,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
         
         try {
             if (filePath != null) {
-                logger.info("HTML content saved to: $filePath")
+                logger.debug("HTML content saved to: $filePath")
                 Files.write(filePath, html.toByteArray(StandardCharsets.UTF_8))
                 return filePath
             }
@@ -165,7 +165,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
         val anthropicModel = envMap["ANTHROPIC_MODEL"] ?: System.getenv("ANTHROPIC_MODEL") ?: ""
         val anthropicBaseUrl = envMap["ANTHROPIC_BASE_URL"] ?: System.getenv("ANTHROPIC_BASE_URL") ?: ""
         
-        logger.info("Injecting environment variables: ANTHROPIC_MODEL='$anthropicModel', ANTHROPIC_BASE_URL='$anthropicBaseUrl'")
+        logger.debug("Injecting environment variables: ANTHROPIC_MODEL='$anthropicModel', ANTHROPIC_BASE_URL='$anthropicBaseUrl'")
         
         // Replace patterns like "ANTHROPIC_MODEL": "undefined" or "ANTHROPIC_MODEL": ""
         // with actual values from environment variables
@@ -194,16 +194,16 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
         try {
             val envFilePath = resolveIdeaShellEnvPath()
             if (envFilePath == null || !envFilePath.exists()) {
-                logger.info("idea-shell-env.json not found at: $envFilePath")
+                logger.debug("idea-shell-env.json not found at: $envFilePath")
                 return emptyMap()
             }
             
-            logger.info("Loading environment variables from: $envFilePath")
+            logger.debug("Loading environment variables from: $envFilePath")
             val jsonContent = Files.readString(envFilePath, StandardCharsets.UTF_8)
             val gson = Gson()
             val envMap = gson.fromJson(jsonContent, Map::class.java) as? Map<String, String> ?: emptyMap()
             
-            logger.info("Loaded ${envMap.size} environment variables from idea-shell-env.json")
+            logger.debug("Loaded ${envMap.size} environment variables from idea-shell-env.json")
             return envMap
         } catch (e: Exception) {
             logger.warn("Failed to load idea-shell-env.json", e)
@@ -298,7 +298,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
      * Register WebView provider and create WebView instance
      */
     fun registerProvider(data: WebviewViewProviderData) {
-        logger.info("Register WebView provider and create WebView instance: ${data.viewType}")
+        logger.debug("Register WebView provider and create WebView instance: ${data.viewType}")
         val extension = data.extension
         
         // Get location info from extension and set resource root directory
@@ -310,7 +310,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
             if (fsPath != null) {
                 // Set resource root directory
                 val path = Paths.get(fsPath)
-                logger.info("Get resource directory path from extension: $path")
+                logger.debug("Get resource directory path from extension: $path")
                 
                 // Ensure the resource directory exists
                 if (!path.exists()) {
@@ -348,7 +348,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
         // Set as the latest created WebView
         latestWebView = webview
         
-        logger.info("Create WebView instance: viewType=${data.viewType}, viewId=$viewId")
+        logger.debug("Create WebView instance: viewType=${data.viewType}, viewId=$viewId")
 
         // Notify callback
         notifyWebViewCreated(webview)
@@ -433,7 +433,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
         // Inject environment variables into HTML content
         // Replace placeholders like "ANTHROPIC_MODEL": "undefined" with actual values
         data.htmlContent = injectEnvironmentVariables(data.htmlContent)
-        logger.info("Received HTML update event: handle=${data.handle}, html length: ${data.htmlContent.length}")
+        logger.debug("Received HTML update event: handle=${data.handle}, html length: ${data.htmlContent.length}")
         
         val webView = getLatestWebView()
         
@@ -449,7 +449,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
 
                     // Use HTTP URL to load WebView content
                     val url = "http://localhost:12345/$filename"
-                    logger.info("Load WebView HTML content via HTTP: $url")
+                    logger.debug("Load WebView HTML content via HTTP: $url")
 
                     webView.loadUrl(url)
                 } else {
@@ -458,7 +458,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
                     webView.loadHtml(data.htmlContent)
                 }
 
-                    logger.info("WebView HTML content updated: handle=${data.handle}")
+                    logger.debug("WebView HTML content updated: handle=${data.handle}")
 
                 // If there is already a theme config, send it after content is loaded
                 if (currentThemeConfig != null) {
@@ -484,12 +484,12 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
     
     override fun dispose() {
         if (isDisposed) {
-            logger.info("WebViewManager has already been disposed, ignoring repeated call")
+            logger.debug("WebViewManager has already been disposed, ignoring repeated call")
             return
         }
         isDisposed = true
         
-        logger.info("Releasing WebViewManager resources...")
+        logger.debug("Releasing WebViewManager resources...")
 
         // Remove listener from theme manager
         try {
@@ -506,12 +506,12 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
                 if (indexFile.exists() && indexFile.isFile) {
                     val deleted = indexFile.delete()
                     if (deleted) {
-                        logger.info("index.html file deleted")
+                        logger.debug("index.html file deleted")
                     } else {
                         logger.warn("Failed to delete index.html file")
                     }
                 } else {
-                    logger.info("index.html file does not exist, no need to clean up")
+                    logger.debug("index.html file does not exist, no need to clean up")
                 }
             }
             resourceRootDir = null
@@ -533,7 +533,7 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
             creationCallbacks.clear()
         }
         
-        logger.info("WebViewManager released")
+        logger.debug("WebViewManager released")
     }
 
 
@@ -791,7 +791,7 @@ class WebViewInstance(
                         })()
                     """.trimIndent()
 
-                    logger.info("Injecting theme style into WebView(${viewId}), size: ${cssContent.length} bytes")
+                    logger.debug("Injecting theme style into WebView(${viewId}), size: ${cssContent.length} bytes")
                     executeJavaScript(injectThemeScript)
                 }
 
@@ -805,7 +805,7 @@ class WebViewInstance(
                 """.trimIndent()
 
                 postMessageToWebView(message)
-                logger.info("Theme config without cssContent has been sent to WebView")
+                logger.debug("Theme config without cssContent has been sent to WebView")
             } else {
                 // If there is no cssContent, send the original config directly
                 val themeConfigJson = gson.toJson(currentThemeConfig)
@@ -817,7 +817,7 @@ class WebViewInstance(
                 """.trimIndent()
 
                 postMessageToWebView(message)
-                logger.info("Theme config has been sent to WebView")
+                logger.debug("Theme config has been sent to WebView")
             }
         } catch (e: Exception) {
             logger.error("Failed to send theme config to WebView", e)
@@ -897,7 +897,7 @@ class WebViewInstance(
                     canGoBack: Boolean,
                     canGoForward: Boolean
                 ) {
-                    logger.info("WebView loading state changed: isLoading=$isLoading, canGoBack=$canGoBack, canGoForward=$canGoForward")
+                    logger.debug("WebView loading state changed: isLoading=$isLoading, canGoBack=$canGoBack, canGoForward=$canGoForward")
                 }
                 
                 override fun onLoadStart(
@@ -905,7 +905,7 @@ class WebViewInstance(
                     frame: CefFrame?,
                     transitionType: CefRequest.TransitionType?
                 ) {
-                    logger.info("WebView started loading: ${frame?.url}, transition type: $transitionType")
+                    logger.debug("WebView started loading: ${frame?.url}, transition type: $transitionType")
                     isPageLoaded = false
                 }
                 
@@ -914,7 +914,7 @@ class WebViewInstance(
                     frame: CefFrame?,
                     httpStatusCode: Int
                 ) {
-                    logger.info("WebView finished loading: ${frame?.url}, status code: $httpStatusCode")
+                    logger.debug("WebView finished loading: ${frame?.url}, status code: $httpStatusCode")
                     isPageLoaded = true
                     injectTheme()
                     // Notify page load completion
@@ -928,7 +928,7 @@ class WebViewInstance(
                     errorText: String?,
                     failedUrl: String?
                 ) {
-                    logger.info("WebView load error: $failedUrl, error code: $errorCode, error message: $errorText")
+                    logger.debug("WebView load error: $failedUrl, error code: $errorCode, error message: $errorText")
                 }
             }, browser.cefBrowser)
             client.addRequestHandler(object : CefRequestHandlerAdapter() {
@@ -939,7 +939,7 @@ class WebViewInstance(
                     user_gesture: Boolean,
                     is_redirect: Boolean
                 ): Boolean {
-                    logger.info("onBeforeBrowse,url:${request?.url}")
+                    logger.debug("onBeforeBrowse,url:${request?.url}")
                     if(request?.url?.startsWith("http://localhost") == false){
                         BrowserUtil.browse(request.url)
                         return true
@@ -967,7 +967,7 @@ class WebViewInstance(
 
                 }
             }, browser.cefBrowser)
-            logger.info("WebView resource interception enabled: $viewType/$viewId")
+            logger.debug("WebView resource interception enabled: $viewType/$viewId")
         } catch (e: Exception) {
             logger.error("Failed to enable WebView resource interception", e)
         }
@@ -978,7 +978,7 @@ class WebViewInstance(
          */
     fun loadUrl(url: String) {
         if (!isDisposed) {
-            logger.info("WebView loading URL: $url")
+            logger.debug("WebView loading URL: $url")
             browser.loadURL(url)
         }
     }
@@ -988,7 +988,7 @@ class WebViewInstance(
          */
     fun loadHtml(html: String, baseUrl: String? = null) {
         if (!isDisposed) {
-            logger.info("WebView loading HTML content, length: ${html.length}, baseUrl: $baseUrl")
+            logger.debug("WebView loading HTML content, length: ${html.length}, baseUrl: $baseUrl")
             if(baseUrl != null) {
                 browser.loadHTML(html, baseUrl)
             }else {
@@ -1020,7 +1020,7 @@ class WebViewInstance(
         if (!isDisposed) {
             browser.dispose()
             isDisposed = true
-            logger.info("WebView instance released: $viewType/$viewId")
+            logger.debug("WebView instance released: $viewType/$viewId")
         }
     }
 }

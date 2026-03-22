@@ -91,7 +91,7 @@ class TerminalInstance(
         state.checkCanInitialize(extHostTerminalId)
 
         try {
-            logger.info("🚀 Initializing terminal instance: $extHostTerminalId (numericId: $numericId)")
+            logger.debug("🚀 Initializing terminal instance: $extHostTerminalId (numericId: $numericId)")
 
             // 🎯 First register to project's Disposer to avoid memory leaks
             registerToProjectDisposer()
@@ -113,7 +113,7 @@ class TerminalInstance(
         try {
             // Register TerminalInstance as a child Disposable of the project
             Disposer.register(project, this)
-            logger.info("✅ Terminal instance registered to project Disposer: $extHostTerminalId")
+            logger.debug("✅ Terminal instance registered to project Disposer: $extHostTerminalId")
         } catch (e: Exception) {
             logger.error("❌ Failed to register terminal instance to project Disposer: $extHostTerminalId", e)
             throw e
@@ -173,7 +173,7 @@ class TerminalInstance(
             val customRunner = createCustomRunner()
             val startupOptions = createStartupOptions()
 
-            logger.info("🚀 Calling startShellTerminalWidget...")
+            logger.debug("🚀 Calling startShellTerminalWidget...")
 
             terminalWidget = customRunner.startShellTerminalWidget(
                 this, // parent disposable
@@ -181,7 +181,7 @@ class TerminalInstance(
                 false  // deferSessionStartUntilUiShown - start session immediately, must be false
             )
 
-            logger.info("✅ startShellTerminalWidget call complete, returned widget: ${terminalWidget?.javaClass?.name}")
+            logger.debug("✅ startShellTerminalWidget call complete, returned widget: ${terminalWidget?.javaClass?.name}")
 
             initializeWidgets()
             setupTerminalCloseListener()
@@ -200,11 +200,11 @@ class TerminalInstance(
     private fun createCustomRunner(): LocalTerminalDirectRunner {
         return object : LocalTerminalDirectRunner(project) {
             override fun createProcess(options: ShellStartupOptions): PtyProcess {
-                logger.info("🔧 Custom createProcess method called...")
-                logger.info("Startup options: $options")
+                logger.debug("🔧 Custom createProcess method called...")
+                logger.debug("Startup options: $options")
 
                 val originalProcess = super.createProcess(options)
-                logger.info("✅ Original Process created: ${originalProcess.javaClass.name}")
+                logger.debug("✅ Original Process created: ${originalProcess.javaClass.name}")
 
                 return createProxyPtyProcess(originalProcess)
             }
@@ -213,12 +213,12 @@ class TerminalInstance(
                 parent: Disposable,
                 startupOptions: ShellStartupOptions
             ): TerminalWidget {
-                logger.info("🔧 Custom createShellTerminalWidget method called...")
+                logger.debug("🔧 Custom createShellTerminalWidget method called...")
                 return super.createShellTerminalWidget(parent, startupOptions)
             }
 
             override fun configureStartupOptions(baseOptions: ShellStartupOptions): ShellStartupOptions {
-                logger.info("🔧 Custom configureStartupOptions method called...")
+                logger.debug("🔧 Custom configureStartupOptions method called...")
                 return super.configureStartupOptions(baseOptions)
             }
         }
@@ -230,8 +230,8 @@ class TerminalInstance(
     private fun createStartupOptions(): ShellStartupOptions {
         val fullShellCommand = buildShellCommand()
 
-        logger.info("🔧 Shell config: shellPath=${config.shellPath}, shellArgs=${config.shellArgs}")
-        logger.info("🔧 Full shell command: $fullShellCommand")
+        logger.debug("🔧 Shell config: shellPath=${config.shellPath}, shellArgs=${config.shellArgs}")
+        logger.debug("🔧 Full shell command: $fullShellCommand")
 
         return ShellStartupOptions.Builder()
             .workingDirectory(config.cwd ?: project.basePath)
@@ -268,7 +268,7 @@ class TerminalInstance(
     private fun setupTerminalCloseListener() {
         try {
             Disposer.register(terminalWidget!!) {
-                logger.info("🔔 TerminalWidget dispose event: $extHostTerminalId")
+                logger.debug("🔔 TerminalWidget dispose event: $extHostTerminalId")
                 if (!state.isDisposed) {
                     onTerminalClosed()
                 }
@@ -282,7 +282,7 @@ class TerminalInstance(
      * Create proxy PtyProcess to intercept input/output streams
      */
     private fun createProxyPtyProcess(originalProcess: PtyProcess): PtyProcess {
-        logger.info("🔧 Creating proxy PtyProcess to intercept input/output streams...")
+        logger.debug("🔧 Creating proxy PtyProcess to intercept input/output streams...")
 
         val rawDataCallback = createRawDataCallback()
         return ProxyPtyProcess(originalProcess, rawDataCallback)
@@ -393,7 +393,7 @@ class TerminalInstance(
             val content = terminalToolWindowManager.newTab(toolWindow, terminalWidget!!)
             content.displayName = config.name ?: DEFAULT_TERMINAL_NAME
             
-            logger.info("✅ Added terminalWidget to Terminal tool window: ${content.displayName}")
+            logger.debug("✅ Added terminalWidget to Terminal tool window: ${content.displayName}")
         } catch (e: Exception) {
             logger.error("❌ Failed to add terminalWidget to tool window", e)
         }
@@ -422,10 +422,10 @@ class TerminalInstance(
 
                 if (shouldExecute) {
                     shell.executeCommand(text)
-                    logger.info("✅ Command executed: $text (terminal: $extHostTerminalId)")
+                    logger.debug("✅ Command executed: $text (terminal: $extHostTerminalId)")
                 } else {
                     shell.writePlainMessage(text)
-                    logger.info("✅ Text sent: $text (terminal: $extHostTerminalId)")
+                    logger.debug("✅ Text sent: $text (terminal: $extHostTerminalId)")
                 }
             } catch (e: Exception) {
                 logger.error("❌ Failed to send text: $extHostTerminalId", e)
@@ -438,7 +438,7 @@ class TerminalInstance(
      */
     private fun notifyTerminalOpened() {
         try {
-            logger.info("📤 Notify exthost process terminal opened: $extHostTerminalId (numericId: $numericId)")
+            logger.debug("📤 Notify exthost process terminal opened: $extHostTerminalId (numericId: $numericId)")
 
             val shellLaunchConfigDto = config.toShellLaunchConfigDto(project.basePath)
             val extHostTerminalServiceProxy =
@@ -451,7 +451,7 @@ class TerminalInstance(
                 shellLaunchConfig = shellLaunchConfigDto
             )
 
-            logger.info("✅ Successfully notified exthost process terminal opened: $extHostTerminalId")
+            logger.debug("✅ Successfully notified exthost process terminal opened: $extHostTerminalId")
         } catch (e: Exception) {
             logger.error("❌ Failed to notify exthost process terminal opened: $extHostTerminalId", e)
         }
@@ -466,7 +466,7 @@ class TerminalInstance(
                 rpcProtocol.getProxy(ServiceProxyRegistry.ExtHostContext.ExtHostTerminalShellIntegration)
 
             extHostTerminalShellIntegrationProxy.shellIntegrationChange(instanceId = numericId)
-            logger.info("✅ Notified exthost Shell integration initialized: (terminal: $extHostTerminalId)")
+            logger.debug("✅ Notified exthost Shell integration initialized: (terminal: $extHostTerminalId)")
 
             notifyEnvironmentVariableChange(extHostTerminalShellIntegrationProxy)
         } catch (e: Exception) {
@@ -490,7 +490,7 @@ class TerminalInstance(
                     isTrusted = true
                 )
 
-                logger.info("✅ Notified exthost environment variable change: ${env.size} variables (terminal: $extHostTerminalId)")
+                logger.debug("✅ Notified exthost environment variable change: ${env.size} variables (terminal: $extHostTerminalId)")
             } catch (e: Exception) {
                 logger.error("❌ Failed to notify environment variable change: (terminal: $extHostTerminalId)", e)
             }
@@ -520,7 +520,7 @@ class TerminalInstance(
      */
     private fun notifyTerminalClosed() {
         try {
-            logger.info("📤 Notify exthost process terminal closed: $extHostTerminalId (numericId: $numericId)")
+            logger.debug("📤 Notify exthost process terminal closed: $extHostTerminalId (numericId: $numericId)")
 
             val extHostTerminalServiceProxy =
                 rpcProtocol.getProxy(ServiceProxyRegistry.ExtHostContext.ExtHostTerminalService)
@@ -530,7 +530,7 @@ class TerminalInstance(
                 exitReason = numericId
             )
 
-            logger.info("✅ Successfully notified exthost process terminal closed: $extHostTerminalId")
+            logger.debug("✅ Successfully notified exthost process terminal closed: $extHostTerminalId")
         } catch (e: Exception) {
             logger.error("❌ Failed to notify exthost process terminal closed: $extHostTerminalId", e)
         }

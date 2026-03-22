@@ -163,7 +163,7 @@ class ShellIntegrationOutputState {
         
         textToFlush?.let { text ->
             output += text
-            logger.info("🚀 Sending ShellExecutionData event: '${text}', length=${text.length}")
+            logger.debug("🚀 Sending ShellExecutionData event: '${text}', length=${text.length}")
             notifyListeners(ShellEvent.ShellExecutionData(text))
         }
     }
@@ -271,19 +271,19 @@ class ShellIntegrationOutputState {
             // Handle different marker types
             when (type) {
                 MarkerType.COMMAND_LINE -> {
-                    logger.info("🎯 Shell Integration - Detected command line marker")
+                    logger.debug("🎯 Shell Integration - Detected command line marker")
                     if (components.isNotEmpty() && components[0].isNotEmpty()) {
                         currentCommand = components[0]
                         currentNonce = if (components.size >= 2) components[1] else ""
-                        logger.info("🎯 Shell Integration - Command line: '$currentCommand'")
+                        logger.debug("🎯 Shell Integration - Command line: '$currentCommand'")
                     }
                 }
                 
                 MarkerType.COMMAND_EXECUTED -> {
-                    logger.info("🚀 Shell Integration - Detected command executed marker")
+                    logger.debug("🚀 Shell Integration - Detected command executed marker")
                     isCommandRunning = true
                     if (currentCommand.isNotEmpty()) {
-                        logger.info("🚀 Shell Integration - Command started: '$currentCommand', isCommandRunning=$isCommandRunning")
+                        logger.debug("🚀 Shell Integration - Command started: '$currentCommand', isCommandRunning=$isCommandRunning")
                         notifyListeners(ShellEvent.ShellExecutionStart(currentCommand, currentDirectory))
                         // Include marker itself in output
                         appendOutput(output.substring(markerIndex, paramEnd + 1))
@@ -291,14 +291,14 @@ class ShellIntegrationOutputState {
                 }
                 
                 MarkerType.COMMAND_FINISHED -> {
-                    logger.info("🏁 Shell Integration - Detected command finished marker")
+                    logger.debug("🏁 Shell Integration - Detected command finished marker")
                     if (currentCommand.isNotEmpty()) {
                         // Include marker itself in output
                         appendOutput(output.substring(markerIndex, paramEnd + 1))
                         flushPendingOutput() // Ensure all pending data is sent before command ends
                         
                         commandStatus = components.firstOrNull()?.toIntOrNull()
-                        logger.info("🏁 Shell Integration - Command finished: '$currentCommand' (exit code: $commandStatus)")
+                        logger.debug("🏁 Shell Integration - Command finished: '$currentCommand' (exit code: $commandStatus)")
                         notifyListeners(ShellEvent.ShellExecutionEnd(currentCommand, commandStatus))
                         currentCommand = ""
                     }
@@ -313,7 +313,7 @@ class ShellIntegrationOutputState {
                             val cwdValue = property.substring(4) // "Cwd=".length
                             if (cwdValue != currentDirectory) {
                                 currentDirectory = cwdValue
-                                logger.info("📁 Shell Integration - Directory changed: '$cwdValue'")
+                                logger.debug("📁 Shell Integration - Directory changed: '$cwdValue'")
                                 notifyListeners(ShellEvent.CwdChange(cwdValue))
                             }
                         }
