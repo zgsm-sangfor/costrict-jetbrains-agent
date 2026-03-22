@@ -89,14 +89,14 @@ class CommentManager(private val project: Project) : Disposable {
             override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
                 // Clean up UI for threads when file is closed
                 val fileUri = URI.file(file.path)
-                logger.info("File closed event: ${fileUri.path}")
+                logger.debug("File closed event: ${fileUri.path}")
                 deleteThreadsForFile(fileUri)
             }
 
             override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
                 // Restore threads UI when file is opened
                 val fileUri = URI.file(file.path)
-                logger.info("File opened event: ${fileUri.path}")
+                logger.debug("File opened event: ${fileUri.path}")
                 restoreThreadsForFile(fileUri)
             }
         })
@@ -104,12 +104,12 @@ class CommentManager(private val project: Project) : Disposable {
 
     fun registerController(handle: Int, id: String, label: String, extensionId: String) {
         controllers[handle] = CommentController(handle, id, label, extensionId)
-        logger.info("Register comment controller: handle=$handle, id=$id")
+        logger.debug("Register comment controller: handle=$handle, id=$id")
         notifyListeners()
     }
 
     fun unregisterController(handle: Int) {
-        logger.info("Unregister comment controller: handle=$handle")
+        logger.debug("Unregister comment controller: handle=$handle")
         controllers.remove(handle)
         controllerRanges.remove(handle)
 
@@ -122,7 +122,7 @@ class CommentManager(private val project: Project) : Disposable {
     }
 
     fun updateControllerFeatures(handle: Int, features: Map<String, Any?>) {
-        logger.info("Update controller features: handle=$handle")
+        logger.debug("Update controller features: handle=$handle")
         controllers.computeIfPresent(handle) { _, controller ->
             controller.copy(features = features.toFeatures())
         }
@@ -130,7 +130,7 @@ class CommentManager(private val project: Project) : Disposable {
     }
 
     fun updateCommentingRanges(handle: Int, resourceHints: Map<String, Any?>?) {
-        logger.info("Update commenting ranges: handle=$handle")
+        logger.debug("Update commenting ranges: handle=$handle")
         controllerRanges[handle] = resourceHints
         notifyListeners()
     }
@@ -146,7 +146,7 @@ class CommentManager(private val project: Project) : Disposable {
         isTemplate: Boolean,
         editorId: String?
     ): Map<String, Any?>? {
-        logger.info("Create comment thread: controller=$handle, thread=$commentThreadHandle")
+        logger.debug("Create comment thread: controller=$handle, thread=$commentThreadHandle")
         val thread = createThreadInternal(
             ThreadCreationData(
                 commentThreadHandle = commentThreadHandle,
@@ -172,7 +172,7 @@ class CommentManager(private val project: Project) : Disposable {
         resource: Map<String, Any?>,
         changes: Map<String, Any?>
     ) {
-        logger.info("Update comment thread: controller=$handle, thread=$commentThreadHandle")
+        logger.debug("Update comment thread: controller=$handle, thread=$commentThreadHandle")
         val thread = threads[commentThreadHandle] ?: return
 
         if (thread.threadId != threadId) {
@@ -203,7 +203,7 @@ class CommentManager(private val project: Project) : Disposable {
             if (newState != null) {
                 val collapsed = newState == "collapsed"
                 if (!collapsed && thread.manuallyCollapsed && thread.collapseState == "collapsed") {
-                    logger.info(
+                    logger.debug(
                         "Ignoring remote expand for manually collapsed thread ${thread.threadId} (handle=${thread.handle})"
                     )
                 } else {
@@ -245,7 +245,7 @@ class CommentManager(private val project: Project) : Disposable {
     }
 
     fun deleteThread(handle: Int, commentThreadHandle: Int) {
-        logger.info("Delete comment thread: controller=$handle, thread=$commentThreadHandle")
+        logger.debug("Delete comment thread: controller=$handle, thread=$commentThreadHandle")
         threads.remove(commentThreadHandle)?.let { thread ->
             thread.isVisible = false
             thread.collapseState = "collapsed"
@@ -260,7 +260,7 @@ class CommentManager(private val project: Project) : Disposable {
         commentUniqueId: Int,
         options: Map<String, Any?>
     ) {
-        logger.info(
+        logger.debug(
             "Reveal comment thread: controller=$handle, thread=$commentThreadHandle, comment=$commentUniqueId, options=$options"
         )
         val thread = threads[commentThreadHandle] ?: return
@@ -284,7 +284,7 @@ class CommentManager(private val project: Project) : Disposable {
     }
 
     fun hideThread(handle: Int, commentThreadHandle: Int) {
-        logger.info("Hide comment thread: controller=$handle, thread=$commentThreadHandle")
+        logger.debug("Hide comment thread: controller=$handle, thread=$commentThreadHandle")
         threads[commentThreadHandle]?.let { thread ->
             thread.isVisible = false
             thread.collapseState = "collapsed"
@@ -356,12 +356,12 @@ class CommentManager(private val project: Project) : Disposable {
                 continue
             }
 
-            logger.info(
+            logger.debug(
                 "Ensuring visibility for thread ${thread.threadId} (handle=${thread.handle}) in response to revealRange on editor=$editorId"
             )
 
             if (rangeInvalid) {
-                logger.info(
+                logger.debug(
                     "Thread ${thread.threadId} has invalid range ${thread.range}, clamping to target range $targetRange"
                 )
                 thread.range = targetRange
@@ -373,7 +373,7 @@ class CommentManager(private val project: Project) : Disposable {
                 thread.manuallyCollapsed = false
             }
 
-            logger.info(
+            logger.debug(
                 "Rendering thread ${thread.threadId} with range ${thread.range} due to revealRange on editor=$editorId"
             )
 
@@ -746,7 +746,7 @@ class CommentManager(private val project: Project) : Disposable {
         if (project.isDisposed) return
         
         val normalizedFilePath = normalizedPath(fileUri.path)
-        logger.info("Cleaning up UI for threads in closed file: $normalizedFilePath")
+        logger.debug("Cleaning up UI for threads in closed file: $normalizedFilePath")
         
         // Find all threads for this file
         val threadsToCleanup = threads.values.filter { thread ->
@@ -756,11 +756,11 @@ class CommentManager(private val project: Project) : Disposable {
         }.toList()
         
         if (threadsToCleanup.isEmpty()) {
-            logger.info("No threads to cleanup for file $normalizedFilePath")
+            logger.debug("No threads to cleanup for file $normalizedFilePath")
             return
         }
         
-        logger.info("Cleaning up UI for ${threadsToCleanup.size} threads in file $normalizedFilePath")
+        logger.debug("Cleaning up UI for ${threadsToCleanup.size} threads in file $normalizedFilePath")
         
         // Only clean up UI, keep thread data for when file reopens
         threadsToCleanup.forEach { thread ->
@@ -770,7 +770,7 @@ class CommentManager(private val project: Project) : Disposable {
             thread.isVisible = false
             thread.collapseState = "collapsed"
             thread.manuallyCollapsed = true
-            logger.info("Cleaned up UI for thread ${thread.threadId} (handle=${thread.handle})")
+            logger.debug("Cleaned up UI for thread ${thread.threadId} (handle=${thread.handle})")
         }
         
         // Notify listeners that thread states have changed
@@ -781,7 +781,7 @@ class CommentManager(private val project: Project) : Disposable {
         if (project.isDisposed) return
         
         val normalizedFilePath = normalizedPath(fileUri.path)
-        logger.info("Restoring threads for opened file: $normalizedFilePath")
+        logger.debug("Restoring threads for opened file: $normalizedFilePath")
         
         // Find all threads for this file
         val threadsToRestore = threads.values.filter { thread ->
@@ -791,19 +791,19 @@ class CommentManager(private val project: Project) : Disposable {
         }.toList()
         
         if (threadsToRestore.isEmpty()) {
-            logger.info("No threads to restore for file $normalizedFilePath")
+            logger.debug("No threads to restore for file $normalizedFilePath")
             return
         }
         
-        logger.info("Restoring ${threadsToRestore.size} threads for file $normalizedFilePath")
+        logger.debug("Restoring ${threadsToRestore.size} threads for file $normalizedFilePath")
         
         // Restore each thread that should be visible
         threadsToRestore.forEach { thread ->
             if (thread.collapseState != "collapsed" && !thread.manuallyCollapsed) {
-                logger.info("Restoring thread ${thread.threadId} (handle=${thread.handle})")
+                logger.debug("Restoring thread ${thread.threadId} (handle=${thread.handle})")
                 ensureThreadDisplayed(thread)
             } else {
-                logger.info("Skipping collapsed thread ${thread.threadId} (handle=${thread.handle})")
+                logger.debug("Skipping collapsed thread ${thread.threadId} (handle=${thread.handle})")
             }
         }
         
@@ -825,7 +825,7 @@ class CommentManager(private val project: Project) : Disposable {
     }
 
     override fun dispose() {
-        logger.info("Dispose CommentManager")
+        logger.debug("Dispose CommentManager")
         scope.cancel()
 
         val existingThreads = threads.values.toList()
@@ -864,7 +864,7 @@ class CommentManager(private val project: Project) : Disposable {
         controller: CommentController?
     ): CommentThread {
         if (controller == null) {
-            logger.info("Creating comment thread ${data.commentThreadHandle} while controller ${data.controllerHandle} is pending registration.")
+            logger.debug("Creating comment thread ${data.commentThreadHandle} while controller ${data.controllerHandle} is pending registration.")
         }
         val commentRange = CommentRange.fromMap(data.range)
         val thread = CommentThread(

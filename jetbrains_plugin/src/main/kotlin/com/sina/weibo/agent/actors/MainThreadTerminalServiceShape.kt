@@ -197,7 +197,7 @@ class MainThreadTerminalService(private val project: Project) : MainThreadTermin
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
     override suspend fun createTerminal(extHostTerminalId: String, config: Map<String, Any?>) {
-        logger.info("🚀 Creating terminal: $extHostTerminalId, config: $config")
+        logger.debug("🚀 Creating terminal: $extHostTerminalId, config: $config")
         
         try {
             // Check if terminal already exists
@@ -213,11 +213,11 @@ class MainThreadTerminalService(private val project: Project) : MainThreadTermin
                 logger.error("❌ Unable to get RPC protocol instance, terminal creation failed: $extHostTerminalId")
                 throw IllegalStateException("RPC protocol not initialized")
             }
-            logger.info("✅ Got RPC protocol instance: ${rpcProtocol.javaClass.simpleName}")
+            logger.debug("✅ Got RPC protocol instance: ${rpcProtocol.javaClass.simpleName}")
             
             // Allocate numeric ID
             val numericId = terminalManager.allocateNumericId()
-            logger.info("🔢 Allocated terminal numeric ID: $numericId")
+            logger.debug("🔢 Allocated terminal numeric ID: $numericId")
             
             // Create terminal instance
             val terminalConfig = TerminalConfig.fromMap(config)
@@ -229,7 +229,7 @@ class MainThreadTerminalService(private val project: Project) : MainThreadTermin
             // Register to manager
             terminalManager.registerTerminal(extHostTerminalId, terminalInstance)
             
-            logger.info("✅ Terminal created successfully: $extHostTerminalId (numericId: $numericId)")
+            logger.debug("✅ Terminal created successfully: $extHostTerminalId (numericId: $numericId)")
             
         } catch (e: Exception) {
             logger.error("❌ Failed to create terminal: $extHostTerminalId", e)
@@ -241,12 +241,12 @@ class MainThreadTerminalService(private val project: Project) : MainThreadTermin
 
     override fun dispose(id: Any) {
         try {
-            logger.info("🧹 Destroying terminal: $id")
+            logger.debug("🧹 Destroying terminal: $id")
             
             val terminalInstance = terminalManager.unregisterTerminal(id.toString())
             if (terminalInstance != null) {
                 terminalInstance.dispose()
-                logger.info("✅ Terminal destroyed: $id")
+                logger.debug("✅ Terminal destroyed: $id")
             } else {
                 logger.warn("Terminal does not exist: $id")
             }
@@ -258,12 +258,12 @@ class MainThreadTerminalService(private val project: Project) : MainThreadTermin
 
     override fun hide(id: Any) {
         try {
-            logger.info("🙈 Hiding terminal: $id")
+            logger.debug("🙈 Hiding terminal: $id")
             
             val terminalInstance = getTerminalInstance(id)
             if (terminalInstance != null) {
                 terminalInstance.hide()
-                logger.info("✅ Terminal hidden: $id")
+                logger.debug("✅ Terminal hidden: $id")
             } else {
                 logger.warn("Terminal does not exist: $id")
             }
@@ -292,12 +292,12 @@ class MainThreadTerminalService(private val project: Project) : MainThreadTermin
 
     override fun show(id: Any, preserveFocus: Boolean?) {
         try {
-            logger.info("👁️ Showing terminal: $id (preserve focus: $preserveFocus)")
+            logger.debug("👁️ Showing terminal: $id (preserve focus: $preserveFocus)")
             
             val terminalInstance = getTerminalInstance(id)
             if (terminalInstance != null) {
                 terminalInstance.show(preserveFocus ?: true)
-                logger.info("✅ Terminal shown: $id")
+                logger.debug("✅ Terminal shown: $id")
             } else {
                 logger.warn("Terminal does not exist: $id")
             }
@@ -308,37 +308,37 @@ class MainThreadTerminalService(private val project: Project) : MainThreadTermin
     }
 
     override fun registerProcessSupport(isSupported: Boolean) {
-        logger.info("📋 Registering process support: $isSupported")
+        logger.debug("📋 Registering process support: $isSupported")
         // In IDEA, process support is built-in, mainly used for logging state here
     }
 
     override fun registerProfileProvider(id: String, extensionIdentifier: String) {
-        logger.info("📋 Registering profile provider: $id (extension: $extensionIdentifier)")
+        logger.debug("📋 Registering profile provider: $id (extension: $extensionIdentifier)")
         // TODO: Implement profile provider registration logic
     }
 
     override fun unregisterProfileProvider(id: String) {
-        logger.info("📋 Unregistering profile provider: $id")
+        logger.debug("📋 Unregistering profile provider: $id")
         // TODO: Implement profile provider unregistration logic
     }
 
     override fun registerCompletionProvider(id: String, extensionIdentifier: String, vararg triggerCharacters: String) {
-        logger.info("📋 Registering completion provider: $id (extension: $extensionIdentifier, trigger characters: ${triggerCharacters.joinToString()})")
+        logger.debug("📋 Registering completion provider: $id (extension: $extensionIdentifier, trigger characters: ${triggerCharacters.joinToString()})")
         // TODO: Implement completion provider registration logic
     }
 
     override fun unregisterCompletionProvider(id: String) {
-        logger.info("📋 Unregistering completion provider: $id")
+        logger.debug("📋 Unregistering completion provider: $id")
         // TODO: Implement completion provider unregistration logic
     }
 
     override fun registerQuickFixProvider(id: String, extensionIdentifier: String) {
-        logger.info("📋 Registering quick fix provider: $id (extension: $extensionIdentifier)")
+        logger.debug("📋 Registering quick fix provider: $id (extension: $extensionIdentifier)")
         // TODO: Implement quick fix provider registration logic
     }
 
     override fun unregisterQuickFixProvider(id: String) {
-        logger.info("📋 Unregistering quick fix provider: $id")
+        logger.debug("📋 Unregistering quick fix provider: $id")
         // TODO: Implement quick fix provider unregistration logic
     }
 
@@ -348,57 +348,57 @@ class MainThreadTerminalService(private val project: Project) : MainThreadTermin
         collection: Map<String, Any?>?,
         descriptionMap: Map<String, Any?>
     ) {
-        logger.info("📋 Setting environment variable collection: $extensionIdentifier (persistent: $persistent)")
+        logger.debug("📋 Setting environment variable collection: $extensionIdentifier (persistent: $persistent)")
         // TODO: Implement environment variable collection setting logic
     }
 
     override fun startSendingDataEvents() {
-        logger.info("📋 Starting to send data events")
+        logger.debug("📋 Starting to send data events")
         // TODO: Implement data event sending logic
     }
 
     override fun stopSendingDataEvents() {
-        logger.info("📋 Stopping data event sending")
+        logger.debug("📋 Stopping data event sending")
         // TODO: Implement stopping data event sending logic
     }
 
     override fun startSendingCommandEvents() {
-        logger.info("📋 Starting to send command events")
+        logger.debug("📋 Starting to send command events")
         // TODO: Implement command event sending logic
     }
 
     override fun stopSendingCommandEvents() {
-        logger.info("📋 Stopping command event sending")
+        logger.debug("📋 Stopping command event sending")
         // TODO: Implement stopping command event sending logic
     }
 
     override fun startLinkProvider() {
-        logger.info("📋 Starting link provider")
+        logger.debug("📋 Starting link provider")
         // TODO: Implement link provider startup logic
     }
 
     override fun stopLinkProvider() {
-        logger.info("📋 Stopping link provider")
+        logger.debug("📋 Stopping link provider")
         // TODO: Implement link provider stopping logic
     }
 
     override fun sendProcessData(terminalId: Int, data: String) {
-        logger.debug("Send process data to terminal $terminalId")
+        logger.trace("Send process data to terminal $terminalId")
         // Send process data to terminal
     }
 
     override fun sendProcessReady(terminalId: Int, pid: Int, cwd: String, windowsPty: Map<String, Any?>?) {
-        logger.info("Send process ready: terminal=$terminalId, pid=$pid, cwd=$cwd")
+        logger.debug("Send process ready: terminal=$terminalId, pid=$pid, cwd=$cwd")
         // Send process ready information
     }
 
     override fun sendProcessProperty(terminalId: Int, property: Map<String, Any?>) {
-        logger.debug("📋 Sending process property: terminal=$terminalId")
+        logger.trace("📋 Sending process property: terminal=$terminalId")
         // TODO: Notify extension host of process property changes
     }
 
     override fun sendProcessExit(terminalId: Int, exitCode: Int?) {
-        logger.info("📋 Sending process exit: terminal=$terminalId, exit code=$exitCode")
+        logger.debug("📋 Sending process exit: terminal=$terminalId, exit code=$exitCode")
         // TODO: Notify extension host of process exit
     }
 

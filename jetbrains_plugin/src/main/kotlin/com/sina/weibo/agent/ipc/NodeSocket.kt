@@ -83,7 +83,7 @@ class NodeSocket : ISocket {
                         val bytesRead = input.read(buffer)
                         if (bytesRead == -1) {
                             // Stream ended
-                            logger.info("Socket[$debugLabel] Read EOF, triggering onEndReceived()")
+                            logger.debug("Socket[$debugLabel] Read EOF, triggering onEndReceived()")
                             onEndReceived()
                             break
                         } else if (bytesRead > 0) {
@@ -128,7 +128,7 @@ class NodeSocket : ISocket {
 
     private fun onEndReceived() {
         traceSocketEvent(SocketDiagnosticsEventType.NODE_END_RECEIVED)
-        logger.info("Socket[$debugLabel] Received END event, disabling write operations")
+        logger.debug("Socket[$debugLabel] Received END event, disabling write operations")
         canWrite.set(false)
 
         // Notify all end listeners
@@ -141,16 +141,16 @@ class NodeSocket : ISocket {
         }
 
         // Set delayed close timer
-        logger.info("Socket[$debugLabel] Will execute delayed close after ${socketEndTimeoutMs}ms")
+        logger.debug("Socket[$debugLabel] Will execute delayed close after ${socketEndTimeoutMs}ms")
         endTimeoutHandle = thread(start = true, name = "NodeSocket-EndTimeout-$debugLabel") {
             try {
                 Thread.sleep(socketEndTimeoutMs)
                 if (!isDisposed.get()) {
-                    logger.info("Socket[$debugLabel] Executing delayed close")
+                    logger.debug("Socket[$debugLabel] Executing delayed close")
                     closeAction()
                 }
             } catch (e: InterruptedException) {
-                logger.info("Socket[$debugLabel] Delayed close thread interrupted")
+                logger.debug("Socket[$debugLabel] Delayed close thread interrupted")
             } catch (e: Exception) {
                 logger.error("Socket[$debugLabel] Delayed close processing exception", e)
             }
@@ -198,10 +198,10 @@ class NodeSocket : ISocket {
 
     private fun closeSocket(hadError: Boolean) {
         if (isDisposed.get()) return
-        logger.info("Socket[$debugLabel] Closing connection, hadError=$hadError")
+        logger.debug("Socket[$debugLabel] Closing connection, hadError=$hadError")
         try {
             if (!isClosed()) {
-                logger.info("Socket[$debugLabel] Closing connection")
+                logger.debug("Socket[$debugLabel] Closing connection")
                 closeAction()
             }
         } catch (e: Exception) {
@@ -253,11 +253,11 @@ class NodeSocket : ISocket {
             return
         }
         if (isClosed()) {
-            logger.info("Socket[$debugLabel] Write ignored: Socket closed")
+            logger.debug("Socket[$debugLabel] Write ignored: Socket closed")
             return
         }
         if (!canWrite.get()) {
-            logger.info("Socket[$debugLabel] Write ignored: canWrite=false")
+            logger.debug("Socket[$debugLabel] Write ignored: canWrite=false")
             return
         }
 
@@ -287,7 +287,7 @@ class NodeSocket : ISocket {
         }
 
         traceSocketEvent(SocketDiagnosticsEventType.NODE_END_SENT)
-        logger.info("Socket[$debugLabel] Sending END signal")
+        logger.debug("Socket[$debugLabel] Sending END signal")
         try {
             if (isSocket && socket != null) {
                 socket.shutdownOutput()

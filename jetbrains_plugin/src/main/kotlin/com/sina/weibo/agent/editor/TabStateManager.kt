@@ -109,10 +109,10 @@ class TabStateManager(var project: Project) {
      */
     internal suspend fun createTab(groupId: Int, input: TabInputBase, options: TabOptions): TabHandle {
         if(input is EditorTabInput){
-            logger.info("create tab s" + input.uri?.path)
+            logger.debug("create tab s" + input.uri?.path)
         }
         if(input is TextDiffTabInput){
-            logger.info("create tab d" + input.modified.path)
+            logger.debug("create tab d" + input.modified.path)
         }
         val group = state.groups[groupId] ?: error("Group not found: $groupId")
 // Create tab
@@ -167,10 +167,10 @@ tabHandles[tab.id] = handle
             val tab = group.tabs[index]
 
             if(tab.input is EditorTabInput){
-                logger.info("remove tab s" + tab.input.uri?.path)
+                logger.debug("remove tab s" + tab.input.uri?.path)
             }
             if(tab.input is TextDiffTabInput){
-                logger.info("remove tab d" + tab.input.modified.path)
+                logger.debug("remove tab d" + tab.input.modified.path)
             }
 
             val newTabs = group.tabs.toMutableList().apply { removeAt(index) }

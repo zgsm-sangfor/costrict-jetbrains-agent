@@ -452,67 +452,67 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
     private val logger = Logger.getInstance(MainThreadLanguageFeatures::class.java)
 
     override fun unregister(handle: Int) {
-        logger.info("Unregistering service: handle=$handle")
+        logger.debug("Unregistering service: handle=$handle")
     }
 
     override fun registerDocumentSymbolProvider(handle: Int, selector: List<Map<String, Any?>>, label: String) {
-        logger.info("Registering document symbol provider: handle=$handle, selector=$selector, label=$label")
+        logger.debug("Registering document symbol provider: handle=$handle, selector=$selector, label=$label")
     }
 
     override fun registerCodeLensSupport(handle: Number, selector: List<Map<String, Any?>>, eventHandle: Number?) {
-        logger.info("Registering code lens support: handle=$handle, selector=$selector, eventHandle=$eventHandle")
+        logger.debug("Registering code lens support: handle=$handle, selector=$selector, eventHandle=$eventHandle")
     }
 
     override fun emitCodeLensEvent(eventHandle: Int, event: Any?) {
-        logger.info("Emitting code lens event: eventHandle=$eventHandle, event=$event")
+        logger.debug("Emitting code lens event: eventHandle=$eventHandle, event=$event")
     }
 
     override fun registerDefinitionSupport(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering definition support: handle=$handle, selector=$selector")
+        logger.debug("Registering definition support: handle=$handle, selector=$selector")
     }
 
     override fun registerDeclarationSupport(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering declaration support: handle=$handle, selector=$selector")
+        logger.debug("Registering declaration support: handle=$handle, selector=$selector")
     }
 
     override fun registerImplementationSupport(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering implementation support: handle=$handle, selector=$selector")
+        logger.debug("Registering implementation support: handle=$handle, selector=$selector")
     }
 
     override fun registerTypeDefinitionSupport(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering type definition support: handle=$handle, selector=$selector")
+        logger.debug("Registering type definition support: handle=$handle, selector=$selector")
     }
 
     override fun registerHoverProvider(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering hover provider: handle=$handle, selector=$selector")
+        logger.debug("Registering hover provider: handle=$handle, selector=$selector")
     }
 
     override fun registerEvaluatableExpressionProvider(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering evaluatable expression provider: handle=$handle, selector=$selector")
+        logger.debug("Registering evaluatable expression provider: handle=$handle, selector=$selector")
     }
 
     override fun registerInlineValuesProvider(handle: Int, selector: List<Map<String, Any?>>, eventHandle: Int?) {
-        logger.info("Registering inline values provider: handle=$handle, selector=$selector, eventHandle=$eventHandle")
+        logger.debug("Registering inline values provider: handle=$handle, selector=$selector, eventHandle=$eventHandle")
     }
 
     override fun emitInlineValuesEvent(eventHandle: Int, event: Any?) {
-        logger.info("Emitting inline values event: eventHandle=$eventHandle, event=$event")
+        logger.debug("Emitting inline values event: eventHandle=$eventHandle, event=$event")
     }
 
     override fun registerDocumentHighlightProvider(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering document highlight provider: handle=$handle, selector=$selector")
+        logger.debug("Registering document highlight provider: handle=$handle, selector=$selector")
     }
 
     override fun registerMultiDocumentHighlightProvider(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering multi-document highlight provider: handle=$handle, selector=$selector")
+        logger.debug("Registering multi-document highlight provider: handle=$handle, selector=$selector")
     }
 
     override fun registerLinkedEditingRangeProvider(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering linked editing range provider: handle=$handle, selector=$selector")
+        logger.debug("Registering linked editing range provider: handle=$handle, selector=$selector")
     }
 
     override fun registerReferenceSupport(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering reference support: handle=$handle, selector=$selector")
+        logger.debug("Registering reference support: handle=$handle, selector=$selector")
     }
 
     override fun registerCodeActionSupport(
@@ -523,7 +523,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         extensionID: String,
         supportsResolve: Boolean
     ) {
-        logger.info("Registering code action support: handle=$handle, selector=$selector, metadata=$metadata, displayName=$displayName, extensionID=$extensionID, supportsResolve=$supportsResolve")
+        logger.debug("Registering code action support: handle=$handle, selector=$selector, metadata=$metadata, displayName=$displayName, extensionID=$extensionID, supportsResolve=$supportsResolve")
     }
 
     override fun registerPasteEditProvider(
@@ -531,7 +531,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         selector: List<Map<String, Any?>>,
         metadata: Map<String, Any?>
     ) {
-        logger.info("Registering paste edit provider: handle=$handle, selector=$selector, metadata=$metadata")
+        logger.debug("Registering paste edit provider: handle=$handle, selector=$selector, metadata=$metadata")
     }
 
     override fun registerDocumentFormattingSupport(
@@ -540,7 +540,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         extensionId: ExtensionIdentifier,
         displayName: String
     ) {
-        logger.info("Registering document formatting support: handle=$handle, selector=$selector, extensionId=${extensionId.value}, displayName=$displayName")
+        logger.debug("Registering document formatting support: handle=$handle, selector=$selector, extensionId=${extensionId.value}, displayName=$displayName")
     }
 
     override fun registerRangeFormattingSupport(
@@ -550,7 +550,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         displayName: String,
         supportRanges: Boolean
     ) {
-        logger.info("Registering range formatting support: handle=$handle, selector=$selector, extensionId=${extensionId.value}, displayName=$displayName, supportRanges=$supportRanges")
+        logger.debug("Registering range formatting support: handle=$handle, selector=$selector, extensionId=${extensionId.value}, displayName=$displayName, supportRanges=$supportRanges")
     }
 
     override fun registerOnTypeFormattingSupport(
@@ -559,19 +559,19 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         autoFormatTriggerCharacters: List<String>,
         extensionId: ExtensionIdentifier
     ) {
-        logger.info("Registering on-type formatting support: handle=$handle, selector=$selector, autoFormatTriggerCharacters=$autoFormatTriggerCharacters, extensionId=${extensionId.value}")
+        logger.debug("Registering on-type formatting support: handle=$handle, selector=$selector, autoFormatTriggerCharacters=$autoFormatTriggerCharacters, extensionId=${extensionId.value}")
     }
 
     override fun registerNavigateTypeSupport(handle: Int, supportsResolve: Boolean) {
-        logger.info("Registering navigate type support: handle=$handle, supportsResolve=$supportsResolve")
+        logger.debug("Registering navigate type support: handle=$handle, supportsResolve=$supportsResolve")
     }
 
     override fun registerRenameSupport(handle: Int, selector: List<Map<String, Any?>>, supportsResolveInitialValues: Boolean) {
-        logger.info("Registering rename support: handle=$handle, selector=$selector, supportsResolveInitialValues=$supportsResolveInitialValues")
+        logger.debug("Registering rename support: handle=$handle, selector=$selector, supportsResolveInitialValues=$supportsResolveInitialValues")
     }
 
     override fun registerNewSymbolNamesProvider(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering new symbol names provider: handle=$handle, selector=$selector")
+        logger.debug("Registering new symbol names provider: handle=$handle, selector=$selector")
     }
 
     override fun registerDocumentSemanticTokensProvider(
@@ -580,11 +580,11 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         legend: Map<String, Any?>,
         eventHandle: Int?
     ) {
-        logger.info("Registering document semantic tokens provider: handle=$handle, selector=$selector, legend=$legend, eventHandle=$eventHandle")
+        logger.debug("Registering document semantic tokens provider: handle=$handle, selector=$selector, legend=$legend, eventHandle=$eventHandle")
     }
 
     override fun emitDocumentSemanticTokensEvent(eventHandle: Int) {
-        logger.info("Emitting document semantic tokens event: eventHandle=$eventHandle")
+        logger.debug("Emitting document semantic tokens event: eventHandle=$eventHandle")
     }
 
     override fun registerDocumentRangeSemanticTokensProvider(
@@ -592,7 +592,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         selector: List<Map<String, Any?>>,
         legend: Map<String, Any?>
     ) {
-        logger.info("Registering document range semantic tokens provider: handle=$handle, selector=$selector, legend=$legend")
+        logger.debug("Registering document range semantic tokens provider: handle=$handle, selector=$selector, legend=$legend")
     }
 
     override fun registerCompletionsProvider(
@@ -602,7 +602,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         supportsResolveDetails: Boolean,
         extensionId: ExtensionIdentifier
     ) {
-        logger.info("Registering completions provider: handle=$handle, selector=$selector, triggerCharacters=$triggerCharacters, supportsResolveDetails=$supportsResolveDetails, extensionId=${extensionId.value}")
+        logger.debug("Registering completions provider: handle=$handle, selector=$selector, triggerCharacters=$triggerCharacters, supportsResolveDetails=$supportsResolveDetails, extensionId=${extensionId.value}")
     }
 
     override fun registerInlineCompletionsSupport(
@@ -614,7 +614,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         displayName: String?,
         debounceDelayMs: Int?
     ) {
-        logger.info("Registering inline completions support: handle=$handle, selector=$selector, supportsHandleDidShowCompletionItem=$supportsHandleDidShowCompletionItem, extensionId=$extensionId, yieldsToExtensionIds=$yieldsToExtensionIds, displayName=$displayName, debounceDelayMs=$debounceDelayMs")
+        logger.debug("Registering inline completions support: handle=$handle, selector=$selector, supportsHandleDidShowCompletionItem=$supportsHandleDidShowCompletionItem, extensionId=$extensionId, yieldsToExtensionIds=$yieldsToExtensionIds, displayName=$displayName, debounceDelayMs=$debounceDelayMs")
     }
 
     override fun registerInlineEditProvider(
@@ -623,7 +623,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         extensionId: ExtensionIdentifier,
         displayName: String
     ) {
-        logger.info("Registering inline edit provider: handle=$handle, selector=$selector, extensionId=${extensionId.value}, displayName=$displayName")
+        logger.debug("Registering inline edit provider: handle=$handle, selector=$selector, extensionId=${extensionId.value}, displayName=$displayName")
     }
 
     override fun registerSignatureHelpProvider(
@@ -631,7 +631,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         selector: List<Map<String, Any?>>,
         metadata: Map<String, Any?>
     ) {
-        logger.info("Registering signature help provider: handle=$handle, selector=$selector, metadata=$metadata")
+        logger.debug("Registering signature help provider: handle=$handle, selector=$selector, metadata=$metadata")
     }
 
     override fun registerInlayHintsProvider(
@@ -641,11 +641,11 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         eventHandle: Int?,
         displayName: String?
     ) {
-        logger.info("Registering inlay hints provider: handle=$handle, selector=$selector, supportsResolve=$supportsResolve, eventHandle=$eventHandle, displayName=$displayName")
+        logger.debug("Registering inlay hints provider: handle=$handle, selector=$selector, supportsResolve=$supportsResolve, eventHandle=$eventHandle, displayName=$displayName")
     }
 
     override fun emitInlayHintsEvent(eventHandle: Int) {
-        logger.info("Emitting inlay hints event: eventHandle=$eventHandle")
+        logger.debug("Emitting inlay hints event: eventHandle=$eventHandle")
     }
 
     override fun registerDocumentLinkProvider(
@@ -653,11 +653,11 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         selector: List<Map<String, Any?>>,
         supportsResolve: Boolean
     ) {
-        logger.info("Registering document link provider: handle=$handle, selector=$selector, supportsResolve=$supportsResolve")
+        logger.debug("Registering document link provider: handle=$handle, selector=$selector, supportsResolve=$supportsResolve")
     }
 
     override fun registerDocumentColorProvider(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering document color provider: handle=$handle, selector=$selector")
+        logger.debug("Registering document color provider: handle=$handle, selector=$selector")
     }
 
     override fun registerFoldingRangeProvider(
@@ -666,23 +666,23 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         extensionId: ExtensionIdentifier,
         eventHandle: Int?
     ) {
-        logger.info("Registering folding range provider: handle=$handle, selector=$selector, extensionId=${extensionId.value}, eventHandle=$eventHandle")
+        logger.debug("Registering folding range provider: handle=$handle, selector=$selector, extensionId=${extensionId.value}, eventHandle=$eventHandle")
     }
 
     override fun emitFoldingRangeEvent(eventHandle: Int, event: Any?) {
-        logger.info("Emitting folding range event: eventHandle=$eventHandle, event=$event")
+        logger.debug("Emitting folding range event: eventHandle=$eventHandle, event=$event")
     }
 
     override fun registerSelectionRangeProvider(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering selection range provider: handle=$handle, selector=$selector")
+        logger.debug("Registering selection range provider: handle=$handle, selector=$selector")
     }
 
     override fun registerCallHierarchyProvider(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering call hierarchy provider: handle=$handle, selector=$selector")
+        logger.debug("Registering call hierarchy provider: handle=$handle, selector=$selector")
     }
 
     override fun registerTypeHierarchyProvider(handle: Int, selector: List<Map<String, Any?>>) {
-        logger.info("Registering type hierarchy provider: handle=$handle, selector=$selector")
+        logger.debug("Registering type hierarchy provider: handle=$handle, selector=$selector")
     }
 
     override fun registerDocumentOnDropEditProvider(
@@ -690,21 +690,21 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         selector: List<Map<String, Any?>>,
         metadata: Map<String, Any?>?
     ) {
-        logger.info("Registering document on drop edit provider: handle=$handle, selector=$selector, metadata=$metadata")
+        logger.debug("Registering document on drop edit provider: handle=$handle, selector=$selector, metadata=$metadata")
     }
 
     override fun resolvePasteFileData(handle: Int, requestId: Int, dataId: String): ByteArray {
-        logger.info("Resolving paste file data: handle=$handle, requestId=$requestId, dataId=$dataId")
+        logger.debug("Resolving paste file data: handle=$handle, requestId=$requestId, dataId=$dataId")
         return ByteArray(0) // Return empty array, actual implementation needs to handle real file data
     }
 
     override fun resolveDocumentOnDropFileData(handle: Int, requestId: Int, dataId: String): ByteArray {
-        logger.info("Resolving document on drop file data: handle=$handle, requestId=$requestId, dataId=$dataId")
+        logger.debug("Resolving document on drop file data: handle=$handle, requestId=$requestId, dataId=$dataId")
         return ByteArray(0) // Return empty array, actual implementation needs to handle real file data
     }
 
     override fun setLanguageConfiguration(handle: Int, languageId: String, configuration: Map<String, Any?>) {
-        logger.info("Setting language configuration: handle=$handle, languageId=$languageId, configuration=$configuration")
+        logger.debug("Setting language configuration: handle=$handle, languageId=$languageId, configuration=$configuration")
     }
 
     override fun dispose() {

@@ -134,52 +134,52 @@ class MainThreadTextEditors(var project: Project) : MainThreadTextEditorsShape {
     private val logger = Logger.getInstance(MainThreadTextEditors::class.java)
 
     override suspend fun tryShowTextDocument(resource: Map<String, Any?>, options: Any?): Any? {
-        logger.info("Trying to show text document: resource=$resource, options=$options")
+        logger.debug("Trying to show text document: resource=$resource, options=$options")
         val path = resource["path"] as String? ?: ""
 
         val vfs = LocalFileSystem.getInstance()
         vfs.refreshIoFiles(listOf(File(path)))
         val resourceURI = createURI(resource)
         val editorHandle = project.getService(EditorAndDocManager::class.java).openEditor(resourceURI)
-        logger.info("Trying to show text document: resource=$resource execution completed" )
+        logger.debug("Trying to show text document: resource=$resource execution completed" )
         return editorHandle.id
     }
     
     override fun registerTextEditorDecorationType(extensionId: Map<String, String>, key: String, options: Any) {
-        logger.info("Registering text editor decoration type: extensionId=$extensionId, key=$key, options=$options")
+        logger.debug("Registering text editor decoration type: extensionId=$extensionId, key=$key, options=$options")
     }
 
     override fun removeTextEditorDecorationType(key: String) {
-        logger.info("Removing text editor decoration type: $key")
+        logger.debug("Removing text editor decoration type: $key")
     }
 
     override fun tryShowEditor(id: String, position: Any?): Any {
-        logger.info("Trying to show editor: id=$id, position=$position")
+        logger.debug("Trying to show editor: id=$id, position=$position")
         return Unit
     }
 
     override fun tryHideEditor(id: String): Any {
-        logger.info("Trying to hide editor: $id")
+        logger.debug("Trying to hide editor: $id")
         return Unit
     }
 
     override fun trySetOptions(id: String, options: Any): Any {
-        logger.info("Try to set options: id=$id, options=$options")
+        logger.debug("Try to set options: id=$id, options=$options")
         return Unit
     }
 
     override fun trySetDecorations(id: String, key: String, ranges: List<Any>): Any {
-        logger.info("Try to set decorations: id=$id, key=$key, ranges=${ranges.size}")
+        logger.debug("Try to set decorations: id=$id, key=$key, ranges=${ranges.size}")
         return Unit
     }
 
     override fun trySetDecorationsFast(id: String, key: String, ranges: List<Any>): Any {
-        logger.info("Try to quickly set decorations: id=$id, key=$key, ranges=${ranges.size}")
+        logger.debug("Try to quickly set decorations: id=$id, key=$key, ranges=${ranges.size}")
         return Unit
     }
 
     override fun tryRevealRange(id: String, range: Map<String,Any?>, revealType: Int): Any {
-        logger.info("Try to reveal range: id=$id, range=$range, revealType=$revealType")
+        logger.debug("Try to reveal range: id=$id, range=$range, revealType=$revealType")
         val handle = project.getService(EditorAndDocManager::class.java).getEditorHandleById(id)
         handle?.let {
             val rang = createRanges(range)
@@ -199,22 +199,22 @@ class MainThreadTextEditors(var project: Project) : MainThreadTextEditorsShape {
     }
 
     override fun trySetSelections(id: String, selections: List<Any>): Any {
-        logger.info("Try to set selections: id=$id, selections=$selections")
+        logger.debug("Try to set selections: id=$id, selections=$selections")
         return Unit
     }
 
     override fun tryApplyEdits(id: String, modelVersionId: Int, edits: List<Any>, opts: Any?): Boolean {
-        logger.info("Try to apply edits: id=$id, modelVersionId=$modelVersionId, edits=$edits, opts=$opts")
+        logger.debug("Try to apply edits: id=$id, modelVersionId=$modelVersionId, edits=$edits, opts=$opts")
         return true
     }
 
     override fun tryInsertSnippet(id: String, modelVersionId: Int, template: String, selections: List<Any>, opts: Any?): Boolean {
-        logger.info("Try to insert snippet: id=$id, modelVersionId=$modelVersionId, template=$template, selections=$selections, opts=$opts")
+        logger.debug("Try to insert snippet: id=$id, modelVersionId=$modelVersionId, template=$template, selections=$selections, opts=$opts")
         return true
     }
 
     override fun getDiffInformation(id: String): Any? {
-        logger.info("Get diff information: $id")
+        logger.debug("Get diff information: $id")
         return null
     }
 

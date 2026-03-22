@@ -141,7 +141,7 @@ class MainThreadConfiguration : MainThreadConfigurationShape {
         val configOverrides = convertToConfigurationOverrides(overrides)
         
         // Log the configuration update for debugging purposes
-        logger.info("Update configuration option: target=${configTarget?.let { ConfigurationTarget.toString(it) }}, key=$key, value=$value, " +
+        logger.debug("Update configuration option: target=${configTarget?.let { ConfigurationTarget.toString(it) }}, key=$key, value=$value, " +
                    "overrideIdentifier=${configOverrides?.overrideIdentifier}, resource=${configOverrides?.resource}, " +
                    "scopeToLanguage=$scopeToLanguage")
         
@@ -196,7 +196,7 @@ class MainThreadConfiguration : MainThreadConfigurationShape {
         val configOverrides = convertToConfigurationOverrides(overrides)
         
         // Log the configuration removal for debugging purposes
-        logger.info("Remove configuration option: target=${configTarget?.let { ConfigurationTarget.toString(it) }}, key=$key, " +
+        logger.debug("Remove configuration option: target=${configTarget?.let { ConfigurationTarget.toString(it) }}, key=$key, " +
                    "overrideIdentifier=${configOverrides?.overrideIdentifier}, resource=${configOverrides?.resource}, " +
                    "scopeToLanguage=$scopeToLanguage")
         
