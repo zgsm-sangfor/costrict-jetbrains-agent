@@ -68,7 +68,7 @@ class CostrictCodeButtonProvider : ExtensionButtonProvider {
      */
     class PlusButtonClickAction : AnAction() {
         private val logger: Logger = Logger.getInstance(PlusButtonClickAction::class.java)
-        private val commandId: String = "zgsm.plusButtonClicked"
+        private val commandId: String = "costrict.plusButtonClicked"
 
         init {
             templatePresentation.icon = AllIcons.General.Add
@@ -93,7 +93,7 @@ class CostrictCodeButtonProvider : ExtensionButtonProvider {
      */
     class PromptsButtonClickAction : AnAction() {
         private val logger: Logger = Logger.getInstance(PromptsButtonClickAction::class.java)
-        private val commandId: String = "zgsm.promptsButtonClicked"
+        private val commandId: String = "costrict.promptsButtonClicked"
 
         init {
             templatePresentation.icon = AllIcons.General.Information
@@ -114,7 +114,7 @@ class CostrictCodeButtonProvider : ExtensionButtonProvider {
 
     class AccountButtonClickAction : AnAction() {
         private val logger: Logger = Logger.getInstance(AccountButtonClickAction::class.java)
-        private val commandId: String = "zgsm.cloudButtonClicked"
+        private val commandId: String = "costrict.cloudButtonClicked"
 
         init {
             templatePresentation.icon = AllIcons.General.User
@@ -139,7 +139,7 @@ class CostrictCodeButtonProvider : ExtensionButtonProvider {
      */
     class MCPButtonClickAction : AnAction() {
         private val logger: Logger = Logger.getInstance(MCPButtonClickAction::class.java)
-        private val commandId: String = "zgsm.mcpButtonClicked"
+        private val commandId: String = "costrict.mcpButtonClicked"
 
         init {
             templatePresentation.icon = AllIcons.Webreferences.Server
@@ -164,7 +164,7 @@ class CostrictCodeButtonProvider : ExtensionButtonProvider {
      */
     class HistoryButtonClickAction : AnAction() {
         private val logger: Logger = Logger.getInstance(HistoryButtonClickAction::class.java)
-        private val commandId: String = "zgsm.historyButtonClicked"
+        private val commandId: String = "costrict.historyButtonClicked"
 
         init {
             templatePresentation.icon = AllIcons.Vcs.History
@@ -189,7 +189,7 @@ class CostrictCodeButtonProvider : ExtensionButtonProvider {
      */
     class SettingsButtonClickAction : AnAction() {
         private val logger: Logger = Logger.getInstance(SettingsButtonClickAction::class.java)
-        private val commandId: String = "zgsm.settingsButtonClicked"
+        private val commandId: String = "costrict.settingsButtonClicked"
 
         init {
             templatePresentation.icon = AllIcons.General.Settings
@@ -214,7 +214,7 @@ class CostrictCodeButtonProvider : ExtensionButtonProvider {
      */
     class MarketplaceButtonClickAction : AnAction() {
         private val logger: Logger = Logger.getInstance(MarketplaceButtonClickAction::class.java)
-        private val commandId: String = "zgsm.marketplaceButtonClicked"
+        private val commandId: String = "costrict.marketplaceButtonClicked"
 
         init {
             templatePresentation.icon = AllIcons.Actions.Install

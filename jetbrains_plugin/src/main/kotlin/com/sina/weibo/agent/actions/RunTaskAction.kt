@@ -25,7 +25,7 @@ class RunTaskAction : WorkflowActionBase {
      */
     constructor() : super(
         actionName = "运行任务",
-        rpcCommand = "zgsm.coworkflow.runTaskJetbrains",
+        rpcCommand = "costrict.coworkflow.runTaskJetbrains",
         actionType = "run"
     )
     
@@ -35,7 +35,7 @@ class RunTaskAction : WorkflowActionBase {
      */
     constructor(lineNumber: Int) : super(
         actionName = "运行任务",
-        rpcCommand = "zgsm.coworkflow.runTaskJetbrains",
+        rpcCommand = "costrict.coworkflow.runTaskJetbrains",
         actionType = "run"
     ) {
         this.predefinedLineNumber = lineNumber

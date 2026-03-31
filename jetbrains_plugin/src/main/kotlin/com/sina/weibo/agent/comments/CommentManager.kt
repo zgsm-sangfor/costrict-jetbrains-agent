@@ -1209,9 +1209,9 @@ class CommentManager(private val project: Project) : Disposable {
     }
 
     private companion object {
-        private const val COMMAND_ACCEPT_COMMENT = "zgsm.acceptIssueJetbrains"
-        private const val COMMAND_REJECT_COMMENT = "zgsm.rejectIssueJetbrains"
-        private const val COMMAND_ASK_COMMENT = "zgsm.askReviewSuggestionWithAIJetbrains"
+        private const val COMMAND_ACCEPT_COMMENT = "costrict.acceptIssueJetbrains"
+        private const val COMMAND_REJECT_COMMENT = "costrict.rejectIssueJetbrains"
+        private const val COMMAND_ASK_COMMENT = "costrict.askReviewSuggestionWithAIJetbrains"
     }
 }
 

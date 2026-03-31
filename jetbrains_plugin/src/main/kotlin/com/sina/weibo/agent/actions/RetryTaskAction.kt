@@ -25,7 +25,7 @@ class RetryTaskAction : WorkflowActionBase {
      */
     constructor() : super(
         actionName = "重试",
-        rpcCommand = "zgsm.coworkflow.retryTaskJetbrains",
+        rpcCommand = "costrict.coworkflow.retryTaskJetbrains",
         actionType = "retry"
     )
     
@@ -35,7 +35,7 @@ class RetryTaskAction : WorkflowActionBase {
      */
     constructor(lineNumber: Int) : super(
         actionName = "重试",
-        rpcCommand = "zgsm.coworkflow.retryTaskJetbrains",
+        rpcCommand = "costrict.coworkflow.retryTaskJetbrains",
         actionType = "retry"
     ) {
         this.predefinedLineNumber = lineNumber

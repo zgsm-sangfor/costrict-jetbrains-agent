@@ -32,7 +32,7 @@ class GenerateCommitMessageAction : AnAction() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val result = executeCommandWithResult("zgsm.generateCommitMessage", project)
+                val result = executeCommandWithResult("costrict.generateCommitMessage", project)
 
                 if (result != null) {
                     val message = result.await()

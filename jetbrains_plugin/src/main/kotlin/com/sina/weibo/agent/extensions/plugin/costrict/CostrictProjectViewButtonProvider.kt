@@ -127,7 +127,7 @@ class CostrictProjectViewButtonProvider : ExtensionButtonProvider {
             args["filePaths"] = filePaths
             args["fileCount"] = filePaths.size
             project.getService(CommentManager::class.java)?.clearAllThreads()
-            executeCommand("zgsm.reviewFilesAndFoldersJetbrains", project, args)
+            executeCommand("costrict.reviewFilesAndFoldersJetbrains", project, args)
         }
         
         override fun update(e: AnActionEvent) {

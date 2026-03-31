@@ -83,7 +83,7 @@ class CostrictCodeContextMenuProvider : ExtensionContextMenuProvider {
             args["startLine"] = effectiveRange.startLine + 1
             args["endLine"] = effectiveRange.endLine + 1
             
-            CostrictCodeContextMenuProvider.handleCodeAction("zgsm.explainCode.InCurrentTask", "EXPLAIN", args, project)
+            CostrictCodeContextMenuProvider.handleCodeAction("costrict.explainCode.InCurrentTask", "EXPLAIN", args, project)
         }
     }
 
@@ -108,7 +108,7 @@ class CostrictCodeContextMenuProvider : ExtensionContextMenuProvider {
             args["startLine"] = effectiveRange.startLine + 1
             args["endLine"] = effectiveRange.endLine + 1
             
-            CostrictCodeContextMenuProvider.handleCodeAction("zgsm.fixCode.InCurrentTask", "FIX", args, project)
+            CostrictCodeContextMenuProvider.handleCodeAction("costrict.fixCode.InCurrentTask", "FIX", args, project)
         }
     }
 
@@ -133,7 +133,7 @@ class CostrictCodeContextMenuProvider : ExtensionContextMenuProvider {
             args["startLine"] = effectiveRange.startLine + 1
             args["endLine"] = effectiveRange.endLine + 1
             
-            CostrictCodeContextMenuProvider.handleCodeAction("zgsm.fixCode.InCurrentTask", "FIX", args, project)
+            CostrictCodeContextMenuProvider.handleCodeAction("costrict.fixCode.InCurrentTask", "FIX", args, project)
         }
     }
 
@@ -158,7 +158,7 @@ class CostrictCodeContextMenuProvider : ExtensionContextMenuProvider {
             args["startLine"] = effectiveRange.startLine + 1
             args["endLine"] = effectiveRange.endLine + 1
             
-            CostrictCodeContextMenuProvider.handleCodeAction("zgsm.improveCode.InCurrentTask", "IMPROVE", args, project)
+            CostrictCodeContextMenuProvider.handleCodeAction("costrict.improveCode.InCurrentTask", "IMPROVE", args, project)
         }
     }
 
@@ -183,7 +183,7 @@ class CostrictCodeContextMenuProvider : ExtensionContextMenuProvider {
             args["startLine"] = effectiveRange.startLine + 1
             args["endLine"] = effectiveRange.endLine + 1
             
-            CostrictCodeContextMenuProvider.handleCodeAction("zgsm.addToContext", "ADD_TO_CONTEXT", args, project)
+            CostrictCodeContextMenuProvider.handleCodeAction("costrict.addToContext", "ADD_TO_CONTEXT", args, project)
         }
     }
 
@@ -208,7 +208,7 @@ class CostrictCodeContextMenuProvider : ExtensionContextMenuProvider {
             args["startLine"] = effectiveRange.startLine + 1
             args["endLine"] = effectiveRange.endLine + 1
             
-            CostrictCodeContextMenuProvider.handleCodeAction("zgsm.newTask", "NEW_TASK", args, project)
+            CostrictCodeContextMenuProvider.handleCodeAction("costrict.newTask", "NEW_TASK", args, project)
         }
     }
 
@@ -235,8 +235,8 @@ class CostrictCodeContextMenuProvider : ExtensionContextMenuProvider {
 
             project.getService(CommentManager::class.java)?.clearAllThreads()
             
-            logger.info("🔍 Triggering code review with command: zgsm.codeReviewJetbrains")
-            executeCommand("zgsm.codeReviewJetbrains", project, args)
+            logger.info("🔍 Triggering code review with command: costrict.codeReviewJetbrains")
+            executeCommand("costrict.codeReviewJetbrains", project, args)
         }
     }
 

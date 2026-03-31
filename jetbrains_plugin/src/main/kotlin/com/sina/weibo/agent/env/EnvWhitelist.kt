@@ -125,6 +125,7 @@ object EnvWhitelist {
         "VSCODE_",
         "GEMINI_CLI_",
         "ZGSM_",
+        "COSTRICT_",
         "JETBRAINS_",
         "GEMINI_",
         "LC_",
