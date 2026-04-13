@@ -6,8 +6,10 @@ package com.sina.weibo.agent.ipc
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
+import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
-import java.util.*
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -37,14 +39,19 @@ class PersistentProtocol(opts: PersistentProtocolOptions, msgListener: ((data: B
     private val _outgoingUnackMsg = LinkedBlockingQueue<ProtocolMessage>()
     private val _outgoingMsgId = AtomicInteger(0)
     private val _outgoingAckId = AtomicInteger(0)
-    private var _outgoingAckTimeout: Timer? = null
+    private var _outgoingAckTimeout: ScheduledFuture<*>? = null
     
     private val _incomingMsgId = AtomicInteger(0)
     private val _incomingAckId = AtomicInteger(0)
     private val _incomingMsgLastTime = AtomicLong(0L)
-    private var _incomingAckTimeout: Timer? = null
+    private var _incomingAckTimeout: ScheduledFuture<*>? = null
     
-    private var _keepAliveInterval: Timer? = null
+    private var _keepAliveInterval: ScheduledFuture<*>? = null
+    
+    // Shared scheduler for all delayed tasks (replaces frequent Timer creation)
+    private val scheduler = Executors.newSingleThreadScheduledExecutor { r ->
+        Thread(r, "PersistentProtocol-Scheduler").apply { isDaemon = true }
+    }
     
     private val _lastReplayRequestTime = AtomicLong(0L)
     private val _lastSocketTimeoutTime = AtomicLong(System.currentTimeMillis())
@@ -102,30 +109,42 @@ class PersistentProtocol(opts: PersistentProtocolOptions, msgListener: ((data: B
         _socket.startReceiving()
         
         if (_shouldSendKeepAlive) {
-            _keepAliveInterval = Timer().apply {
-                scheduleAtFixedRate(object : TimerTask() {
-                    override fun run() {
-                        _sendKeepAlive()
-                    }
-                }, ProtocolConstants.KEEP_ALIVE_SEND_TIME.toLong(), ProtocolConstants.KEEP_ALIVE_SEND_TIME.toLong())
-            }
+            _keepAliveInterval = scheduler.scheduleAtFixedRate({
+                _sendKeepAlive()
+            }, ProtocolConstants.KEEP_ALIVE_SEND_TIME.toLong(), ProtocolConstants.KEEP_ALIVE_SEND_TIME.toLong(), TimeUnit.MILLISECONDS)
         }
     }
     
     override fun dispose() {
-        _outgoingAckTimeout?.cancel()
+        if (_isDisposed) return
+        
+        _outgoingAckTimeout?.cancel(false)
         _outgoingAckTimeout = null
         
-        _incomingAckTimeout?.cancel()
+        _incomingAckTimeout?.cancel(false)
         _incomingAckTimeout = null
         
-        _keepAliveInterval?.cancel()
+        _keepAliveInterval?.cancel(false)
         _keepAliveInterval = null
+        
+        scheduler.shutdown()
+        // 兜底：等待残留任务结束，最多 2 秒
+        try {
+            if (!scheduler.awaitTermination(2, TimeUnit.SECONDS)) {
+                LOG.warn("PersistentProtocol scheduler did not terminate in 2s, forcing shutdown")
+                scheduler.shutdownNow()
+            }
+        } catch (_: InterruptedException) {
+            scheduler.shutdownNow()
+        }
         
         _socketDisposables.forEach { it.dispose() }
         _socketDisposables.clear()
 
         _isDisposed = true
+        
+        // 通知上层：本地主动销毁与远端断开语义统一
+        _onDidDispose.fire(Unit)
     }
     
     override suspend fun drain() {
@@ -348,14 +367,10 @@ class PersistentProtocol(opts: PersistentProtocolOptions, msgListener: ((data: B
             return
         }
         
-        _incomingAckTimeout = Timer().apply {
-            schedule(object : TimerTask() {
-                override fun run() {
-                    _incomingAckTimeout = null
-                    _sendAckCheck()
-                }
-            }, ProtocolConstants.ACKNOWLEDGE_TIME - timeSinceLastIncomingMsg + 5)
-        }
+        _incomingAckTimeout = scheduler.schedule({
+            _incomingAckTimeout = null
+            _sendAckCheck()
+        }, ProtocolConstants.ACKNOWLEDGE_TIME - timeSinceLastIncomingMsg + 5, TimeUnit.MILLISECONDS)
     }
     
     private fun _recvAckCheck() {
@@ -410,14 +425,10 @@ class PersistentProtocol(opts: PersistentProtocolOptions, msgListener: ((data: B
             500
         )
         
-        _outgoingAckTimeout = Timer().apply {
-            schedule(object : TimerTask() {
-                override fun run() {
-                    _outgoingAckTimeout = null
-                    _recvAckCheck()
-                }
-            }, minimumTimeUntilTimeout)
-        }
+        _outgoingAckTimeout = scheduler.schedule({
+            _outgoingAckTimeout = null
+            _recvAckCheck()
+        }, minimumTimeUntilTimeout, TimeUnit.MILLISECONDS)
     }
     
     private fun _sendAck() {

@@ -40,7 +40,7 @@ class ExtensionSwitcher(private val project: Project) {
     private var switchingFuture: CompletableFuture<Boolean>? = null
 
     // Coroutine scope for switching operations
-    private val switchingScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var switchingScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     companion object {
         fun getInstance(project: Project): ExtensionSwitcher {
@@ -244,6 +244,7 @@ class ExtensionSwitcher(private val project: Project) {
     fun cancelSwitching() {
         if (isSwitching) {
             switchingScope.cancel("Extension switching cancelled")
+            switchingScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
             isSwitching = false
             switchingFuture?.cancel(true)
             LOG.info("Extension switching cancelled")

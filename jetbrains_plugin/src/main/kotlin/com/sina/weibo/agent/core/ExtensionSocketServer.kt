@@ -138,7 +138,9 @@ class ExtensionSocketServer() : ISocketServer {
                 val manager = ExtensionHostManager(clientSocket, projectPath,project)
                 clientManagers[clientSocket] = manager
 
-                handleClient(clientSocket, manager)
+                thread(start = true, name = "ClientHandler-${clientSocket.port}") {
+                    handleClient(clientSocket, manager)
+                }
             } catch (e: IOException) {
                 if (isRunning) {
                     logger.error("Error accepting client connection", e)
@@ -177,35 +179,27 @@ class ExtensionSocketServer() : ISocketServer {
             // Start extension host manager
             manager.start()
             
-            // Periodically check socket health
-            var lastCheckTime = System.currentTimeMillis()
-            val CHECK_INTERVAL = 15000 // Check every 15 seconds
-            
-            // Wait for socket to close
+            // Health check loop using polling (DO NOT read from socket - NodeSocket handles that)
+            // Reading from clientSocket.getInputStream() would compete with NodeSocket's receive
+            // thread and steal protocol messages, causing initialization to hang.
             while (clientSocket.isConnected && !clientSocket.isClosed && isRunning) {
                 try {
-                    // Periodically check connection health
-                    val currentTime = System.currentTimeMillis()
-                    if (currentTime - lastCheckTime > CHECK_INTERVAL) {
-                        lastCheckTime = currentTime
-                        
-                        if (!isSocketHealthy(clientSocket)) {
-                            logger.error("Detected unhealthy Socket connection, closing connection")
-                            break
-                        }
-                        
-                        // Check RPC response state
-                        val responsiveState = manager.getResponsiveState()
-                        if (responsiveState != null) {
-                            logger.debug("Current RPC response state: $responsiveState")
-                        }
-                    }
-                    
-                    Thread.sleep(500)
-                } catch (ie: InterruptedException) {
-                    // Thread interrupted, server is shutting down, exit loop
-                    logger.info("Client handler thread interrupted, exiting loop")
+                    Thread.sleep(5000)
+                } catch (e: InterruptedException) {
+                    logger.info("Client handler thread interrupted during health check sleep")
                     break
+                }
+                
+                // Check socket health
+                if (!isSocketHealthy(clientSocket)) {
+                    logger.error("Detected unhealthy Socket connection, closing connection")
+                    break
+                }
+                
+                // Check RPC response state
+                val responsiveState = manager.getResponsiveState()
+                if (responsiveState != null) {
+                    logger.debug("Current RPC response state: $responsiveState")
                 }
             }
         } catch (e: Exception) {

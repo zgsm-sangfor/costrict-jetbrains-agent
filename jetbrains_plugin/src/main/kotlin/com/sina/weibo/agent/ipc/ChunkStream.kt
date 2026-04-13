@@ -9,7 +9,7 @@ package com.sina.weibo.agent.ipc
  * Corresponds to ChunkStream in VSCode
  */
 class ChunkStream {
-    private val chunks = mutableListOf<ByteArray>()
+    private val chunks = ArrayDeque<ByteArray>()
     
     /**
      * Get total byte length of data in the stream
@@ -25,7 +25,7 @@ class ChunkStream {
         if (buff.isEmpty()) {
             return
         }
-        chunks.add(buff)
+        chunks.addLast(buff)
         byteLength += buff.size
     }
     
@@ -62,19 +62,19 @@ class ChunkStream {
             throw IllegalArgumentException("Cannot read so many bytes!")
         }
         
-        if (chunks[0].size == byteCount) {
+        if (chunks.first().size == byteCount) {
             // Fast path, first chunk is exactly the data to return
-            val result = chunks[0]
+            val result = chunks.first()
             if (advance) {
-                chunks.removeAt(0)
+                chunks.removeFirst()
                 byteLength -= byteCount
             }
             return result
         }
         
-        if (chunks[0].size > byteCount) {
+        if (chunks.first().size > byteCount) {
             // Fast path, data to read is completely in the first chunk
-            val firstChunk = chunks[0]
+            val firstChunk = chunks.first()
             val result = ByteArray(byteCount)
             System.arraycopy(firstChunk, 0, result, 0, byteCount)
             
@@ -117,7 +117,7 @@ class ChunkStream {
                 remainingBytes -= chunk.size
                 
                 if (advance) {
-                    chunks.removeAt(chunkIndex)
+                    chunks.removeFirst() // 等价于 removeAt(chunkIndex)：循环中已消费的 chunk 始终在队头
                     byteLength -= chunk.size
                 } else {
                     chunkIndex++

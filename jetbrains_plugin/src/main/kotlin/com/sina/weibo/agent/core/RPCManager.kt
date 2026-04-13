@@ -15,7 +15,8 @@ import com.sina.weibo.agent.ipc.proxy.logger.FileRPCProtocolLogger
 import com.sina.weibo.agent.ipc.proxy.uri.IURITransformer
 import com.sina.weibo.agent.theme.ThemeManager
 import com.sina.weibo.agent.util.ProxyConfigUtil
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Responsible for managing RPC protocols, service registration and implementation, plugin lifecycle management
@@ -45,10 +46,10 @@ class RPCManager(
      * Start initializing plugin environment
      * Send configuration and workspace information to extension process
      */
-    fun startInitialize() {
+    suspend fun startInitialize() {
         try {
             logger.info("Starting to initialize plugin environment")
-            runBlocking {
+            withContext(Dispatchers.IO) {
                 // Get ExtHostConfiguration proxy
                 val extHostConfiguration =
                     rpcProtocol.getProxy(ServiceProxyRegistry.ExtHostContext.ExtHostConfiguration)
@@ -204,10 +205,13 @@ class RPCManager(
         //MainThreadEditorTabs
         rpcProtocol.set(ServiceProxyRegistry.MainContext.MainThreadEditorTabs, MainThreadEditorTabs(project))
 
-        //MainThreadDocuments
+        // MainThreadDocuments
         rpcProtocol.set(ServiceProxyRegistry.MainContext.MainThreadDocuments, MainThreadDocuments(project))
 
-    }
+        // MainThreadProgress
+        rpcProtocol.set(ServiceProxyRegistry.MainContext.MainThreadProgress, MainThreadProgress())
+
+        }
 
     /**
      * Set up protocol handlers required for WeCode plugin

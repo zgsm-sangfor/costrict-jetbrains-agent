@@ -115,7 +115,9 @@ class ExtensionUnixDomainSocketServer : ISocketServer {
                 logger.info("[UDS] New client connected")
                 val manager = ExtensionHostManager(clientChannel, projectPath,project)
                 clientManagers[clientChannel] = manager
-                handleClient(clientChannel, manager) // Start client handler thread
+                thread(start = true, name = "UDSClientHandler-${clientChannel.hashCode()}") {
+                    handleClient(clientChannel, manager)
+                }
             } catch (e: Exception) {
                 if (isRunning) {
                     logger.error("[UDS] Accept failed, will retry in 1s", e)
@@ -134,31 +136,26 @@ class ExtensionUnixDomainSocketServer : ISocketServer {
         try {
             manager.start() // Start extension host manager
 
-            var lastCheckTime = System.currentTimeMillis()
-            val CHECK_INTERVAL = 15000 // Heartbeat check interval
-
+            // Health check loop using polling (DO NOT read from channel - NodeSocket handles that)
+            // Reading from clientChannel would compete with NodeSocket's receive thread
+            // (via Channels.newInputStream) and steal protocol messages, causing initialization to hang.
             while (clientChannel.isConnected && clientChannel.isOpen && isRunning) {
                 try {
-                    val currentTime = System.currentTimeMillis()
-                    if (currentTime - lastCheckTime > CHECK_INTERVAL) {
-                        lastCheckTime = currentTime
-
-                        // UDS has no input/output shutdown flag, can only use isOpen
-                        if (!clientChannel.isOpen) {
-                            logger.error("[UDS] Client channel unhealthy, closing.")
-                            break
-                        }
-
-                        val responsiveState = manager.getResponsiveState()
-                        if (responsiveState != null) {
-                            logger.debug("[UDS] Client RPC state: $responsiveState")
-                        }
-                    }
-
-                    Thread.sleep(500)
+                    Thread.sleep(5000)
                 } catch (ie: InterruptedException) {
                     logger.info("[UDS] Client handler interrupted, exiting loop")
                     break
+                }
+
+                // Check channel health
+                if (!clientChannel.isOpen) {
+                    logger.error("[UDS] Client channel unhealthy, closing.")
+                    break
+                }
+
+                val responsiveState = manager.getResponsiveState()
+                if (responsiveState != null) {
+                    logger.debug("[UDS] Client RPC state: $responsiveState")
                 }
             }
         } catch (e: Exception) {

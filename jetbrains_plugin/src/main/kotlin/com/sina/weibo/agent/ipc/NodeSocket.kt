@@ -28,6 +28,7 @@ class NodeSocket : ISocket {
     private val canWrite = AtomicBoolean(true)
     private var receiveThread: Thread? = null
     private val isDisposed = AtomicBoolean(false)
+    private val writeLock = Any()
     private var endTimeoutHandle: Thread? = null
     private val socketEndTimeoutMs = 30_000L // 30 second timeout
     private val debugLabel: String
@@ -256,28 +257,30 @@ class NodeSocket : ISocket {
             logger.debug("Socket[$debugLabel] Write ignored: Socket closed")
             return
         }
-        if (!canWrite.get()) {
-            logger.debug("Socket[$debugLabel] Write ignored: canWrite=false")
-            return
-        }
-
-        try {
-            traceSocketEvent(SocketDiagnosticsEventType.WRITE, buffer)
-            writeAction(buffer)
-        } catch (e: java.nio.channels.ClosedChannelException) {
-            logger.warn("Socket[$debugLabel] ClosedChannelException detected during write, connection closed")
-            handleSocketError(e)
-        } catch (e: IOException) {
-            logger.error("Socket[$debugLabel] IO exception occurred during write", e)
-            // Filter out EPIPE errors
-            if (e.message?.contains("Broken pipe") == true) {
-                logger.warn("Socket[$debugLabel] Broken pipe detected during write")
+        synchronized(writeLock) {
+            if (!canWrite.get()) {
+                logger.debug("Socket[$debugLabel] Write ignored: canWrite=false")
                 return
             }
-            handleSocketError(e)
-        } catch (e: Exception) {
-            logger.error("Socket[$debugLabel] Unknown exception occurred during write", e)
-            handleSocketError(e)
+
+            try {
+                traceSocketEvent(SocketDiagnosticsEventType.WRITE, buffer)
+                writeAction(buffer)
+            } catch (e: java.nio.channels.ClosedChannelException) {
+                logger.warn("Socket[$debugLabel] ClosedChannelException detected during write, connection closed")
+                handleSocketError(e)
+            } catch (e: IOException) {
+                logger.error("Socket[$debugLabel] IO exception occurred during write", e)
+                // Filter out EPIPE errors
+                if (e.message?.contains("Broken pipe") == true) {
+                    logger.warn("Socket[$debugLabel] Broken pipe detected during write")
+                    return
+                }
+                handleSocketError(e)
+            } catch (e: Exception) {
+                logger.error("Socket[$debugLabel] Unknown exception occurred during write", e)
+                handleSocketError(e)
+            }
         }
     }
 
