@@ -10,8 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.Executors
-import kotlin.coroutines.CoroutineContext
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Buffered event emitter
@@ -20,13 +19,14 @@ import kotlin.coroutines.CoroutineContext
  * @param T Event data type
  */
 class BufferedEmitter<T> {
-    private val listeners = mutableListOf<(T) -> Unit>()
+    private val listeners = CopyOnWriteArrayList<(T) -> Unit>()
     private val bufferedMessages = ConcurrentLinkedQueue<T>()
+    @Volatile
     private var hasListeners = false
+    @Volatile
     private var isDeliveringMessages = false
     
-    private val coroutineContext = Dispatchers.IO
-    private val scope = CoroutineScope(coroutineContext)
+    private val scope = CoroutineScope(Dispatchers.IO)
     
     companion object {
         private val LOG = Logger.getInstance(BufferedEmitter::class.java)
@@ -43,21 +43,16 @@ class BufferedEmitter<T> {
      * @return Listener registration identifier for removing the listener
      */
     fun onEvent(listener: (T) -> Unit): Disposable {
-        val wasEmpty = listeners.isEmpty()
         listeners.add(listener)
-        
-        if (wasEmpty) {
-            hasListeners = true
-            // Use microtask queue to ensure these messages are delivered before other messages have a chance to be received
+        hasListeners = true
+        if (bufferedMessages.isNotEmpty()) {
             scope.launch { deliverMessages() }
         }
         
         return Disposable {
             synchronized(listeners) {
                 listeners.remove(listener)
-                if (listeners.isEmpty()) {
-                    hasListeners = false
-                }
+                if (listeners.isEmpty()) hasListeners = false
             }
         }
     }
@@ -68,17 +63,16 @@ class BufferedEmitter<T> {
      */
     fun fire(event: T) {
         if (hasListeners) {
-            if (bufferedMessages.isNotEmpty()) {
-                bufferedMessages.offer(event)
-            } else {
-                synchronized(listeners) {
-                    ArrayList(listeners).forEach { listener ->
-                        try {
-                            listener(event)
-                        } catch (e: Exception) {
-                            // Log exception but do not interrupt processing
-                            LOG.warn("Error in event listener: ${e.message}", e)
-                        }
+            synchronized(listeners) {
+                if (bufferedMessages.isNotEmpty()) {
+                    bufferedMessages.offer(event)
+                    return
+                }
+                ArrayList(listeners).forEach { listener ->
+                    try {
+                        listener(event)
+                    } catch (e: Exception) {
+                        LOG.warn("Event listener error: ${e.message}")
                     }
                 }
             }
@@ -97,22 +91,18 @@ class BufferedEmitter<T> {
     /**
      * Deliver buffered messages
      */
-    private fun deliverMessages() {
-        if (isDeliveringMessages) {
-            return
-        }
-        
+    private suspend fun deliverMessages() {
+        if (isDeliveringMessages) return
         isDeliveringMessages = true
         try {
-            while (hasListeners && bufferedMessages.isNotEmpty()) {
+            while (bufferedMessages.isNotEmpty()) {
                 val event = bufferedMessages.poll() ?: break
                 synchronized(listeners) {
                     ArrayList(listeners).forEach { listener ->
                         try {
                             listener(event)
                         } catch (e: Exception) {
-                            // Log exception but do not interrupt processing
-                            LOG.warn("Error in event listener: ${e.message}", e)
+                            LOG.warn("Event listener error: ${e.message}")
                         }
                     }
                 }

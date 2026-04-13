@@ -24,6 +24,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.net.Socket
 import java.nio.channels.SocketChannel
 import java.nio.file.Files
@@ -44,6 +45,7 @@ import java.io.File
 class ExtensionHostManager : Disposable {
     companion object {
         val LOG = Logger.getInstance(ExtensionHostManager::class.java)
+        private val companionGson = Gson()
     }
 
     private val project: Project
@@ -65,8 +67,7 @@ class ExtensionHostManager : Disposable {
     // Extension identifier
     private var extensionIdentifier: String? = null
     
-     // JSON serialization
-    private val gson = Gson()
+     // JSON serialization (shared via companion object)
     
      // Last diagnostic log time
     private var lastDiagnosticLogTime = 0L
@@ -207,9 +208,11 @@ class ExtensionHostManager : Disposable {
             LOG.info("handleReadyMessage createInitData: ${initData}")
             
              // Send initialization data
-            val jsonData = gson.toJson(initData).toByteArray()
-
-            protocol?.send(jsonData)
+           val baos = java.io.ByteArrayOutputStream()
+           val writer = java.io.OutputStreamWriter(baos, Charsets.UTF_8)
+           companionGson.toJson(initData, writer)
+           writer.flush()
+           protocol?.send(baos.toByteArray())
             LOG.info("Sent initialization data to extension host")
         } catch (e: Exception) {
             LOG.error("Failed to handle Ready message", e)
@@ -231,25 +234,31 @@ class ExtensionHostManager : Disposable {
             // Create RPC manager
             rpcManager = RPCManager(protocol, extensionManager, null, project)
 
-            // Start initialization process
-            rpcManager?.startInitialize()
+            // Start initialization process in coroutine to avoid blocking caller thread
+            coroutineScope.launch {
+                try {
+                    rpcManager?.startInitialize()
 
-            // Start file monitoring
-            project.getService(WorkspaceFileChangeManager::class.java)
-            project.getService(EditorAndDocManager::class.java).initCurrentIdeaEditor()
-            
-            // Activate extension
-            val extensionId = extensionIdentifier ?: throw IllegalStateException("Extension identifier is not initialized")
-            extensionManager.activateExtension(extensionId, rpcManager!!.getRPCProtocol())
-                .whenComplete { _, error ->
-                    if (error != null) {
-                        LOG.error("Failed to activate extension: ${currentProvider.getExtensionId()}", error)
-                    } else {
-                        LOG.info("Extension activated successfully: ${currentProvider.getExtensionId()}")
-                    }
+                    // Start file monitoring
+                    project.getService(WorkspaceFileChangeManager::class.java)
+                    project.getService(EditorAndDocManager::class.java).initCurrentIdeaEditor()
+                    
+                    // Activate extension
+                    val extensionId = extensionIdentifier ?: throw IllegalStateException("Extension identifier is not initialized")
+                    extensionManager.activateExtension(extensionId, rpcManager!!.getRPCProtocol())
+                        .whenComplete { _, error ->
+                            if (error != null) {
+                                LOG.error("Failed to activate extension: ${currentProvider.getExtensionId()}", error)
+                            } else {
+                                LOG.info("Extension activated successfully: ${currentProvider.getExtensionId()}")
+                            }
+                        }
+
+                    LOG.info("Initialized extension host")
+                } catch (e: Exception) {
+                    LOG.error("Failed during async initialization", e)
                 }
-
-            LOG.info("Initialized extension host")
+            }
         } catch (e: Exception) {
             LOG.error("Failed to handle Initialized message", e)
         }

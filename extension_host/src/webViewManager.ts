@@ -53,11 +53,11 @@ export class WebViewManager implements MainThreadWebviewViewsShape, MainThreadWe
         // Create a new webview instance
         const webview = new SimpleWebview();
         
-        // Store the webview instance
-        this._webviews.set(viewType, webview);
-        
         // Generate a unique handle for this webview
         const webviewHandle = `webview-${viewType}-${Date.now()}`;
+        
+        // Store the webview instance with handle as key
+        this._webviews.set(webviewHandle, webview);
         
         // Notify the extension host that the webview is ready
         this._proxy.$resolveWebviewView(
@@ -72,11 +72,13 @@ export class WebViewManager implements MainThreadWebviewViewsShape, MainThreadWe
     $unregisterWebviewViewProvider(viewType: string): void {
         console.log('Unregister webview view provider:', viewType);
         
-        // Remove the webview instance
-        const webview = this._webviews.get(viewType);
-        if (webview) {
-            webview.dispose();
-            this._webviews.delete(viewType);
+        // Remove the webview instance by finding matching handle
+        for (const [handle, webview] of this._webviews) {
+            if (handle.startsWith(`webview-${viewType}-`)) {
+                webview.dispose();
+                this._webviews.delete(handle);
+                break;
+            }
         }
     }
 

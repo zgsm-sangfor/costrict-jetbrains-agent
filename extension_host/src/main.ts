@@ -49,6 +49,16 @@ let rpcManager: RPCManager | null = null;
 const server = net.createServer((socket) => {
     console.log('Someone connected to main server');
     
+    // Dispose old connection resources before creating new ones
+    if (rpcManager) {
+        rpcManager.dispose();
+        rpcManager = null;
+    }
+    if (protocol) {
+        protocol.dispose();
+        protocol = null;
+    }
+    
     // Set socket noDelay option
     socket.setNoDelay(true);
     
@@ -68,14 +78,21 @@ const server = net.createServer((socket) => {
         closeDisposable.dispose();
     });
     
-    // Create PersistentProtocol instance
-    protocol = new PersistentProtocol({
+    // Create PersistentProtocol as a session-scoped local variable.
+    // DO NOT reference the global `protocol` variable inside this callback —
+    // the closure must only use `sessionProtocol` to avoid stale-reference bugs
+    // where a delayed message from a disposed protocol fires against a new session.
+    const sessionProtocol = new PersistentProtocol({
         socket: nodeSocket,
         initialChunk: null
     });
+    // Also update the global reference (for SIGINT cleanup)
+    protocol = sessionProtocol;
 
-    // Set protocol message handler
-    protocol.onMessage((message) => {
+    let isSessionInitialized = false;
+
+    // Set protocol message handler — only references sessionProtocol, never the global
+    sessionProtocol.onMessage((message) => {
         if (isMessageOfType(message, MessageType.Ready)) {
             console.log('Extension host is ready');
             // Send initialization data
@@ -140,16 +157,23 @@ const server = net.createServer((socket) => {
                 },
                 uiKind: UIKind.Desktop
             };
-            protocol?.send(VSBuffer.fromString(JSON.stringify(initData)));
+            sessionProtocol.send(VSBuffer.fromString(JSON.stringify(initData)));
         } else if (isMessageOfType(message, MessageType.Initialized)) {
-            console.log('Extension host initialized');
-            // Create RPCManager instance
-            rpcManager = new RPCManager(protocol!, extensionManager);
+            if (isSessionInitialized) {
+                console.warn('Extension host session already initialized, ignoring duplicate Initialized message');
+                return;
+            }
+            isSessionInitialized = true;
 
-            rpcManager.startInitialize();
+            console.log('Extension host initialized');
+            // Create RPCManager bound to this session's protocol
+            const sessionRpcManager = new RPCManager(sessionProtocol, extensionManager);
+            rpcManager = sessionRpcManager;
+
+            sessionRpcManager.startInitialize();
             
             // Activate rooCode plugin
-            const rpcProtocol = rpcManager.getRPCProtocol();
+            const rpcProtocol = sessionRpcManager.getRPCProtocol();
             if (rpcProtocol) {
                 extensionManager.activateExtension(rooCodeIdentifier.value, rpcProtocol)
                     .catch((error: Error) => {
@@ -163,9 +187,9 @@ const server = net.createServer((socket) => {
 });
 
 function startExtensionHostProcess() {
-    process.env.VSCODE_DEBUG = 'true';
-    let nodeOptions = process.env.VSCODE_DEBUG 
-        ? `--inspect-brk=9229`
+    const debugPort = process.env.VSCODE_DEBUG_PORT || '0';
+    let nodeOptions = process.env.VSCODE_DEBUG
+        ? `--inspect-brk=${debugPort}`
         : `--inspect=${DEBUG_PORT}`
     console.log('will start extension host process with options:', nodeOptions);
 
@@ -208,3 +232,4 @@ process.on('SIGINT', () => {
     }
     process.exit(0);
 });
+

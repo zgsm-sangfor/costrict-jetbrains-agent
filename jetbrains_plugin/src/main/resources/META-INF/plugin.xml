@@ -74,7 +74,7 @@ It supports users in conducting code checks on functions, selected code lines, c
    
    <!-- Change notes for the plugin -->
    <change-notes><![CDATA[
-       <h3>Version 2.6.4</h3>
+       <h3>Version 2.7.0</h3>
         <a href="https://github.com/zgsm-ai/costrict/blob/main/CHANGELOG.md">changelog</a>
    ]]></change-notes>
 
