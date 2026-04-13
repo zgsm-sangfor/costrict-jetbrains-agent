@@ -39,19 +39,23 @@ const fsUnlink = promisify(fs.unlink);
 const fsLstat = promisify(fs.lstat);
 const fsMkdir = promisify(fs.mkdir);
 
+// Debug logging helper - only logs when COStrict_DEBUG=1
+const isDebug = process.env.COStrict_DEBUG === '1';
+const debugLog = (...args: any[]) => { if (isDebug) console.log('[Debug]', ...args); };
+
 class RPCLogger implements IRPCProtocolLogger {
     logIncoming(msgLength: number, req: number, initiator: RequestInitiator, msg: string, data?: any): void {
         if (msg == 'ack') {
             return
         }
-        console.log(`[RPC] ExtHost: ${msg}`);
+        debugLog(`[RPC] ExtHost: ${msg}`);
     }
 
     logOutgoing(msgLength: number, req: number, initiator: RequestInitiator, msg: string, data?: any): void {
         if (msg == 'ack' || msg == 'reply:') {
             return
         }
-        console.log(`[RPC] Main: ${msg}`);
+        debugLog(`[RPC] Main: ${msg}`);
     }
 }
 
@@ -128,7 +132,7 @@ export class RPCManager {
                 switch (entry.severity) {
                     case 'log':
                     case 'info':
-                        console.log('[Extension Host]', ...args);
+                        debugLog('[Extension Host]', ...args);
                         break;
                     case 'warn':
                         console.warn('[Extension Host]', ...args);
@@ -140,7 +144,7 @@ export class RPCManager {
                         console.debug('[Extension Host]', ...args);
                         break;
                     default:
-                        console.log('[Extension Host]', ...args);
+                        debugLog('[Extension Host]', ...args);
                 }
             },
             parseRemoteConsoleLog(entry: IRemoteConsoleLog): any[] {
@@ -162,25 +166,25 @@ export class RPCManager {
         // MainThreadLogger
         this.rpcProtocol.set(MainContext.MainThreadLogger, {
             $log(file: UriComponents, messages: [LogLevel, string][]): void {
-                console.log('Logger message:', { file, messages });
+                debugLog('Logger message:', { file, messages });
             },
             $flush(file: UriComponents): void {
-                console.log('Flush logger:', file);
+                debugLog('Flush logger:', file);
             },
             $createLogger(file: UriComponents, options?: any): Promise<void> {
-                console.log('Create logger:', { file, options });
+                debugLog('Create logger:', { file, options });
                 return Promise.resolve();
             },
             $registerLogger(logger: UriDto<ILoggerResource>): Promise<void> {
-                console.log('Register logger (id: ', logger.id, ', name: ', logger.name, ')');
+                debugLog('Register logger (id: ', logger.id, ', name: ', logger.name, ')');
                 return Promise.resolve();
             },
             $deregisterLogger(resource: UriComponents): Promise<void> {
-                console.log('Deregister logger:', resource);
+                debugLog('Deregister logger:', resource);
                 return Promise.resolve();
             },
             $setVisibility(resource: UriComponents, visible: boolean): Promise<void> {
-                console.log('Set logger visibility:', { resource, visible });
+                debugLog('Set logger visibility:', { resource, visible });
                 return Promise.resolve();
             }
         });
@@ -188,224 +192,224 @@ export class RPCManager {
         // MainThreadCommands
         this.rpcProtocol.set(MainContext.MainThreadCommands, {
             $registerCommand(id: string): void {
-                console.log('Register command:', id);
+                debugLog('Register command:', id);
             },
             $unregisterCommand(id: string): void {
-                console.log('Unregister command:', id);
+                debugLog('Unregister command:', id);
             },
             $executeCommand<T>(id: string, ...args: any[]): Promise<T> {
-                console.log('Execute command:', id, args);
+                debugLog('Execute command:', id, args);
                 return Promise.resolve(null as T);
             },
             $fireCommandActivationEvent(id: string): void {
-                console.log('Fire command activation event:', id);
+                debugLog('Fire command activation event:', id);
             },
             $getCommands(): Promise<string[]> {
                 return Promise.resolve([]);
             },
             dispose(): void {
-                console.log('Dispose MainThreadCommands');
+                debugLog('Dispose MainThreadCommands');
             }
         });
 
         // MainThreadTerminalService
         this.rpcProtocol.set(MainContext.MainThreadTerminalService, {
             $registerProcessSupport(isSupported: boolean): void {
-                console.log('Register process support:', isSupported);
+                debugLog('Register process support:', isSupported);
             },
             $createTerminal(extHostTerminalId: string, config: TerminalLaunchConfig): Promise<void> {
-                console.log('Create terminal:', { extHostTerminalId, config });
+                debugLog('Create terminal:', { extHostTerminalId, config });
                 return Promise.resolve();
             },
             $dispose(id: string): void {
-                console.log('Dispose terminal:', id);
+                debugLog('Dispose terminal:', id);
             },
             $hide(id: string): void {
-                console.log('Hide terminal:', id);
+                debugLog('Hide terminal:', id);
             },
             $sendText(id: string, text: string, shouldExecute: boolean): void {
-                console.log('Send text to terminal:', { id, text, shouldExecute });
+                debugLog('Send text to terminal:', { id, text, shouldExecute });
             },
             $show(id: string, preserveFocus: boolean): void {
-                console.log('Show terminal:', { id, preserveFocus });
+                debugLog('Show terminal:', { id, preserveFocus });
             },
             $registerProfileProvider(id: string, extensionIdentifier: string): void {
-                console.log('Register profile provider:', { id, extensionIdentifier });
+                debugLog('Register profile provider:', { id, extensionIdentifier });
             },
             $unregisterProfileProvider(id: string): void {
-                console.log('Unregister profile provider:', id);
+                debugLog('Unregister profile provider:', id);
             },
             $registerCompletionProvider(id: string, extensionIdentifier: string, ...triggerCharacters: string[]): void {
-                console.log('Register completion provider:', { id, extensionIdentifier, triggerCharacters });
+                debugLog('Register completion provider:', { id, extensionIdentifier, triggerCharacters });
             },
             $unregisterCompletionProvider(id: string): void {
-                console.log('Unregister completion provider:', id);
+                debugLog('Unregister completion provider:', id);
             },
             $registerQuickFixProvider(id: string, extensionIdentifier: string): void {
-                console.log('Register quick fix provider:', { id, extensionIdentifier });
+                debugLog('Register quick fix provider:', { id, extensionIdentifier });
             },
             $unregisterQuickFixProvider(id: string): void {
-                console.log('Unregister quick fix provider:', id);
+                debugLog('Unregister quick fix provider:', id);
             },
             $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: any, descriptionMap: any): void {
-                console.log('Set environment variable collection:', { extensionIdentifier, persistent, collection, descriptionMap });
+                debugLog('Set environment variable collection:', { extensionIdentifier, persistent, collection, descriptionMap });
             },
             $startSendingDataEvents(): void {
-                console.log('Start sending data events');
+                debugLog('Start sending data events');
             },
             $stopSendingDataEvents(): void {
-                console.log('Stop sending data events');
+                debugLog('Stop sending data events');
             },
             $startSendingCommandEvents(): void {
-                console.log('Start sending command events');
+                debugLog('Start sending command events');
             },
             $stopSendingCommandEvents(): void {
-                console.log('Stop sending command events');
+                debugLog('Stop sending command events');
             },
             $startLinkProvider(): void {
-                console.log('Start link provider');
+                debugLog('Start link provider');
             },
             $stopLinkProvider(): void {
-                console.log('Stop link provider');
+                debugLog('Stop link provider');
             },
             $sendProcessData(terminalId: number, data: string): void {
-                console.log('Send process data:', { terminalId, data });
+                debugLog('Send process data:', { terminalId, data });
             },
             $sendProcessReady(terminalId: number, pid: number, cwd: string, windowsPty: any): void {
-                console.log('Send process ready:', { terminalId, pid, cwd, windowsPty });
+                debugLog('Send process ready:', { terminalId, pid, cwd, windowsPty });
             },
             $sendProcessProperty(terminalId: number, property: any): void {
-                console.log('Send process property:', { terminalId, property });
+                debugLog('Send process property:', { terminalId, property });
             },
             $sendProcessExit(terminalId: number, exitCode: number | undefined): void {
-                console.log('Send process exit:', { terminalId, exitCode });
+                debugLog('Send process exit:', { terminalId, exitCode });
             },
             dispose(): void {
-                console.log('Dispose MainThreadTerminalService');
+                debugLog('Dispose MainThreadTerminalService');
             }
         });
 
         // MainThreadWindow
         this.rpcProtocol.set(MainContext.MainThreadWindow, {
             $getInitialState(): Promise<{ isFocused: boolean; isActive: boolean }> {
-                console.log('Get initial state');
+                debugLog('Get initial state');
                 return Promise.resolve({ isFocused: false, isActive: false });
             },
             $openUri(uri: UriComponents, uriString: string | undefined, options: any): Promise<boolean> {
-                console.log('Open URI:', { uri, uriString, options });
+                debugLog('Open URI:', { uri, uriString, options });
                 return Promise.resolve(true);
             },
             $asExternalUri(uri: UriComponents, options: any): Promise<UriComponents> {
-                console.log('As external URI:', { uri, options });
+                debugLog('As external URI:', { uri, options });
                 return Promise.resolve(uri);
             },
             dispose(): void {
-                console.log('Dispose MainThreadWindow');
+                debugLog('Dispose MainThreadWindow');
             }
         });
 
         // MainThreadSearch
         this.rpcProtocol.set(MainContext.MainThreadSearch, {
             $registerFileSearchProvider(handle: number, scheme: string): void {
-                console.log('Register file search provider:', { handle, scheme });
+                debugLog('Register file search provider:', { handle, scheme });
             },
             $registerAITextSearchProvider(handle: number, scheme: string): void {
-                console.log('Register AI text search provider:', { handle, scheme });
+                debugLog('Register AI text search provider:', { handle, scheme });
             },
             $registerTextSearchProvider(handle: number, scheme: string): void {
-                console.log('Register text search provider:', { handle, scheme });
+                debugLog('Register text search provider:', { handle, scheme });
             },
             $unregisterProvider(handle: number): void {
-                console.log('Unregister provider:', handle);
+                debugLog('Unregister provider:', handle);
             },
             $handleFileMatch(handle: number, session: number, data: UriComponents[]): void {
-                console.log('Handle file match:', { handle, session, data });
+                debugLog('Handle file match:', { handle, session, data });
             },
             $handleTextMatch(handle: number, session: number, data: IRawFileMatch2[]): void {
-                console.log('Handle text match:', { handle, session, data });
+                debugLog('Handle text match:', { handle, session, data });
             },
             $handleTelemetry(eventName: string, data: any): void {
-                console.log('Handle telemetry:', { eventName, data });
+                debugLog('Handle telemetry:', { eventName, data });
             },
             dispose(): void {
-                console.log('Dispose MainThreadSearch');
+                debugLog('Dispose MainThreadSearch');
             }
         });
 
         // MainThreadTask
         this.rpcProtocol.set(MainContext.MainThreadTask, {
             $createTaskId(task: any): Promise<string> {
-                console.log('Create task ID:', task);
+                debugLog('Create task ID:', task);
                 return Promise.resolve('task-id');
             },
             $registerTaskProvider(handle: number, type: string): Promise<void> {
-                console.log('Register task provider:', { handle, type });
+                debugLog('Register task provider:', { handle, type });
                 return Promise.resolve();
             },
             $unregisterTaskProvider(handle: number): Promise<void> {
-                console.log('Unregister task provider:', handle);
+                debugLog('Unregister task provider:', handle);
                 return Promise.resolve();
             },
             $fetchTasks(filter?: any): Promise<any[]> {
-                console.log('Fetch tasks:', filter);
+                debugLog('Fetch tasks:', filter);
                 return Promise.resolve([]);
             },
             $getTaskExecution(value: any): Promise<any> {
-                console.log('Get task execution:', value);
+                debugLog('Get task execution:', value);
                 return Promise.resolve(null);
             },
             $executeTask(task: any): Promise<any> {
-                console.log('Execute task:', task);
+                debugLog('Execute task:', task);
                 return Promise.resolve(null);
             },
             $terminateTask(id: string): Promise<void> {
-                console.log('Terminate task:', id);
+                debugLog('Terminate task:', id);
                 return Promise.resolve();
             },
             $registerTaskSystem(scheme: string, info: any): void {
-                console.log('Register task system:', { scheme, info });
+                debugLog('Register task system:', { scheme, info });
             },
             $customExecutionComplete(id: string, result?: number): Promise<void> {
-                console.log('Custom execution complete:', { id, result });
+                debugLog('Custom execution complete:', { id, result });
                 return Promise.resolve();
             },
             $registerSupportedExecutions(custom?: boolean, shell?: boolean, process?: boolean): Promise<void> {
-                console.log('Register supported executions:', { custom, shell, process });
+                debugLog('Register supported executions:', { custom, shell, process });
                 return Promise.resolve();
             },
             dispose(): void {
-                console.log('Dispose MainThreadTask');
+                debugLog('Dispose MainThreadTask');
             }
         });
 
         // MainThreadConfiguration
         this.rpcProtocol.set(MainContext.MainThreadConfiguration, {
             $updateConfigurationOption(target: any, key: string, value: any, overrides: any, scopeToLanguage: boolean | undefined): Promise<void> {
-                console.log('Update configuration option:', { target, key, value, overrides, scopeToLanguage });
+                debugLog('Update configuration option:', { target, key, value, overrides, scopeToLanguage });
                 return Promise.resolve();
             },
             $removeConfigurationOption(target: any, key: string, overrides: any, scopeToLanguage: boolean | undefined): Promise<void> {
-                console.log('Remove configuration option:', { target, key, overrides, scopeToLanguage });
+                debugLog('Remove configuration option:', { target, key, overrides, scopeToLanguage });
                 return Promise.resolve();
             },
             dispose(): void {
-                console.log('Dispose MainThreadConfiguration');
+                debugLog('Dispose MainThreadConfiguration');
             }
         });
 
         // MainThreadFileSystem
         this.rpcProtocol.set(MainContext.MainThreadFileSystem, {
             async $registerFileSystemProvider(handle: number, scheme: string, capabilities: any, readonlyMessage?: any): Promise<void> {
-                console.log('Register file system provider:', { handle, scheme, capabilities, readonlyMessage });
+                debugLog('Register file system provider:', { handle, scheme, capabilities, readonlyMessage });
             },
             $unregisterProvider(handle: number): void {
-                console.log('Unregister provider:', handle);
+                debugLog('Unregister provider:', handle);
             },
             $onFileSystemChange(handle: number, resource: any[]): void {
-                console.log('File system change:', { handle, resource });
+                debugLog('File system change:', { handle, resource });
             },
             async $stat(resource: UriComponents): Promise<any> {
-                console.log('Stat:', resource);
+                debugLog('Stat:', resource);
                 try {
                     const filePath = this.uriToPath(resource);
                     const stats = await fsStat(filePath);
@@ -423,7 +427,7 @@ export class RPCManager {
                 }
             },
             async $readdir(resource: UriComponents): Promise<[string, FileType][]> {
-                console.log('Read directory:', resource);
+                debugLog('Read directory:', resource);
                 try {
                     const filePath = this.uriToPath(resource);
                     const entries = await fsReadDir(filePath, { withFileTypes: true });
@@ -449,9 +453,15 @@ export class RPCManager {
                 }
             },
             async $readFile(resource: UriComponents): Promise<any> {
-                console.log('Read file:', resource);
+                debugLog('Read file:', resource);
                 try {
                     const filePath = this.uriToPath(resource);
+                    // Size check to prevent OOM on large files
+                    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+                    const stats = await fsStat(filePath);
+                    if (stats.size > MAX_FILE_SIZE) {
+                        throw new Error(`File too large: ${stats.size} bytes (max ${MAX_FILE_SIZE} bytes): ${filePath}`);
+                    }
                     const buffer = await fsReadFile(filePath);
                     return VSBuffer.wrap(buffer);
                 } catch (error) {
@@ -460,7 +470,7 @@ export class RPCManager {
                 }
             },
             async $writeFile(resource: UriComponents, content: any): Promise<void> {
-                console.log('Write file:', { resource, content });
+                debugLog('Write file:', { resource, size: content?.byteLength || content?.buffer?.byteLength || 'unknown' });
                 try {
                     const filePath = this.uriToPath(resource);
                     const buffer = content instanceof VSBuffer ? content.buffer : content;
@@ -471,7 +481,7 @@ export class RPCManager {
                 }
             },
             async $rename(resource: UriComponents, target: UriComponents, opts: any): Promise<void> {
-                console.log('Rename:', { resource, target, opts });
+                debugLog('Rename:', { resource, target, opts });
                 try {
                     const sourcePath = this.uriToPath(resource);
                     const targetPath = this.uriToPath(target);
@@ -492,7 +502,7 @@ export class RPCManager {
                 }
             },
             async $copy(resource: UriComponents, target: UriComponents, opts: any): Promise<void> {
-                console.log('Copy:', { resource, target, opts });
+                debugLog('Copy:', { resource, target, opts });
                 try {
                     const sourcePath = this.uriToPath(resource);
                     const targetPath = this.uriToPath(target);
@@ -513,7 +523,7 @@ export class RPCManager {
                 }
             },
             async $mkdir(resource: UriComponents): Promise<void> {
-                console.log('Make directory:', resource);
+                debugLog('Make directory:', resource);
                 try {
                     const dirPath = this.uriToPath(resource);
                     await fsMkdir(dirPath, { recursive: true });
@@ -523,7 +533,7 @@ export class RPCManager {
                 }
             },
             async $delete(resource: UriComponents, opts: any): Promise<void> {
-                console.log('Delete:', { resource, opts });
+                debugLog('Delete:', { resource, opts });
                 try {
                     const filePath = this.uriToPath(resource);
                     
@@ -542,12 +552,12 @@ export class RPCManager {
                 }
             },
             async $ensureActivation(scheme: string): Promise<void> {
-                console.log('Ensure activation:', scheme);
+                debugLog('Ensure activation:', scheme);
                 // No-op implementation
                 return Promise.resolve();
             },
             dispose(): void {
-                console.log('Dispose MainThreadFileSystem');
+                debugLog('Dispose MainThreadFileSystem');
             },
             
             // Helper methods
@@ -616,25 +626,25 @@ export class RPCManager {
         // MainThreadLanguageModelTools
         this.rpcProtocol.set(MainContext.MainThreadLanguageModelTools, {
             $getTools(): Promise<any[]> {
-                console.log('Getting language model tools');
+                debugLog('Getting language model tools');
                 return Promise.resolve([]);
             },
             $invokeTool(dto: any, token: any): Promise<any> {
-                console.log('Invoking language model tool:', dto);
+                debugLog('Invoking language model tool:', dto);
                 return Promise.resolve({});
             },
             $countTokensForInvocation(callId: string, input: string, token: any): Promise<number> {
-                console.log('Counting tokens for invocation:', { callId, input });
+                debugLog('Counting tokens for invocation:', { callId, input });
                 return Promise.resolve(0);
             },
             $registerTool(id: string): void {
-                console.log('Registering language model tool:', id);
+                debugLog('Registering language model tool:', id);
             },
             $unregisterTool(name: string): void {
-                console.log('Unregistering language model tool:', name);
+                debugLog('Unregistering language model tool:', name);
             },
             dispose(): void {
-                console.log('Disposing MainThreadLanguageModelTools');
+                debugLog('Disposing MainThreadLanguageModelTools');
             },
         });
     }
@@ -647,18 +657,18 @@ export class RPCManager {
 
         this.rpcProtocol.set(MainContext.MainThreadExtensionService, {
             $getExtension: async (extensionId: string): Promise<Dto<IExtensionDescription> | undefined> => {
-                console.log(`Getting extension: ${extensionId}`);
+                debugLog(`Getting extension: ${extensionId}`);
                 return this.extensionManager.getExtensionDescription(extensionId);
             },
             $activateExtension: async (extensionId: ExtensionIdentifier, reason: ExtensionActivationReason): Promise<void> => {
-                console.log(`Activating extension ${extensionId.value} with reason:`, reason);
+                debugLog(`Activating extension ${extensionId.value} with reason:`, reason);
                 await this.extensionManager.activateExtension(extensionId.value, this.rpcProtocol);
             },
             $onWillActivateExtension: async (extensionId: ExtensionIdentifier): Promise<void> => {
-                console.log(`Extension ${extensionId.value} will be activated`);
+                debugLog(`Extension ${extensionId.value} will be activated`);
             },
             $onDidActivateExtension: (extensionId: ExtensionIdentifier, codeLoadingTime: number, activateCallTime: number, activateResolvedTime: number, activationReason: ExtensionActivationReason): void => {
-                console.log(`Extension ${extensionId.value} was activated with reason:`, activationReason);
+                debugLog(`Extension ${extensionId.value} was activated with reason:`, activationReason);
             },
             $onExtensionActivationError: async (extensionId: ExtensionIdentifier, error: any, missingExtensionDependency: any | null): Promise<void> => {
                 console.error(`Extension ${extensionId.value} activation error:`, error);
@@ -667,101 +677,101 @@ export class RPCManager {
                 console.error(`Extension ${extensionId.value} runtime error:`, error);
             },
             $setPerformanceMarks: async (marks: { name: string; startTime: number }[]): Promise<void> => {
-                console.log('Setting performance marks:', marks);
+                debugLog('Setting performance marks:', marks);
             },
             $asBrowserUri: async (uri: any): Promise<any> => {
-                console.log('Converting to browser URI:', uri);
+                debugLog('Converting to browser URI:', uri);
                 return uri;
             },
             dispose: () => {
-                console.log('Disposing MainThreadExtensionService');
+                debugLog('Disposing MainThreadExtensionService');
             }
         });
 
         this.rpcProtocol.set(MainContext.MainThreadTelemetry, {
             $publicLog(eventName: string, data?: any): void {
-                console.log(`[Telemetry] ${eventName}`, data);
+                debugLog(`[Telemetry] ${eventName}`, data);
             },
             $publicLog2<E extends any = never, T extends any = never>(eventName: string, data?: any): void {
-                console.log(`[Telemetry] ${eventName}`, data);
+                debugLog(`[Telemetry] ${eventName}`, data);
             },
             dispose(): void {
-                console.log('Disposing MainThreadTelemetry');
+                debugLog('Disposing MainThreadTelemetry');
             }
         });
 
         this.rpcProtocol.set(MainContext.MainThreadDebugService, {
             $registerDebugTypes(debugTypes: string[]): void {
-                console.log('Register debug types:', debugTypes);
+                debugLog('Register debug types:', debugTypes);
             },
             $sessionCached(sessionID: string): void {
-                console.log('Session cached:', sessionID);
+                debugLog('Session cached:', sessionID);
             },
             $acceptDAMessage(handle: number, message: any): void {
-                console.log('Accept debug adapter message:', { handle, message });
+                debugLog('Accept debug adapter message:', { handle, message });
             },
             $acceptDAError(handle: number, name: string, message: string, stack: string | undefined): void {
                 console.error('Debug adapter error:', { handle, name, message, stack });
             },
             $acceptDAExit(handle: number, code: number | undefined, signal: string | undefined): void {
-                console.log('Debug adapter exit:', { handle, code, signal });
+                debugLog('Debug adapter exit:', { handle, code, signal });
             },
             async $registerDebugConfigurationProvider(type: string, triggerKind: any, hasProvideMethod: boolean, hasResolveMethod: boolean, hasResolve2Method: boolean, handle: number): Promise<void> {
-                console.log('Register debug configuration provider:', { type, triggerKind, hasProvideMethod, hasResolveMethod, hasResolve2Method, handle });
+                debugLog('Register debug configuration provider:', { type, triggerKind, hasProvideMethod, hasResolveMethod, hasResolve2Method, handle });
             },
             async $registerDebugAdapterDescriptorFactory(type: string, handle: number): Promise<void> {
-                console.log('Register debug adapter descriptor factory:', { type, handle });
+                debugLog('Register debug adapter descriptor factory:', { type, handle });
             },
             $unregisterDebugConfigurationProvider(handle: number): void {
-                console.log('Unregister debug configuration provider:', handle);
+                debugLog('Unregister debug configuration provider:', handle);
             },
             $unregisterDebugAdapterDescriptorFactory(handle: number): void {
-                console.log('Unregister debug adapter descriptor factory:', handle);
+                debugLog('Unregister debug adapter descriptor factory:', handle);
             },
             async $startDebugging(folder: any, nameOrConfig: string | any, options: any): Promise<boolean> {
-                console.log('Start debugging:', { folder, nameOrConfig, options });
+                debugLog('Start debugging:', { folder, nameOrConfig, options });
                 return true;
             },
             async $stopDebugging(sessionId: string | undefined): Promise<void> {
-                console.log('Stop debugging:', sessionId);
+                debugLog('Stop debugging:', sessionId);
             },
             $setDebugSessionName(id: string, name: string): void {
-                console.log('Set debug session name:', { id, name });
+                debugLog('Set debug session name:', { id, name });
             },
             async $customDebugAdapterRequest(id: string, command: string, args: any): Promise<any> {
-                console.log('Custom debug adapter request:', { id, command, args });
+                debugLog('Custom debug adapter request:', { id, command, args });
                 return null;
             },
             async $getDebugProtocolBreakpoint(id: string, breakpoinId: string): Promise<any> {
-                console.log('Get debug protocol breakpoint:', { id, breakpoinId });
+                debugLog('Get debug protocol breakpoint:', { id, breakpoinId });
                 return undefined;
             },
             $appendDebugConsole(value: string): void {
-                console.log('Debug console:', value);
+                debugLog('Debug console:', value);
             },
             async $registerBreakpoints(breakpoints: any[]): Promise<void> {
-                console.log('Register breakpoints:', breakpoints);
+                debugLog('Register breakpoints:', breakpoints);
             },
             async $unregisterBreakpoints(breakpointIds: string[], functionBreakpointIds: string[], dataBreakpointIds: string[]): Promise<void> {
-                console.log('Unregister breakpoints:', { breakpointIds, functionBreakpointIds, dataBreakpointIds });
+                debugLog('Unregister breakpoints:', { breakpointIds, functionBreakpointIds, dataBreakpointIds });
             },
             $registerDebugVisualizer(extensionId: string, id: string): void {
-                console.log('Register debug visualizer:', { extensionId, id });
+                debugLog('Register debug visualizer:', { extensionId, id });
             },
             $unregisterDebugVisualizer(extensionId: string, id: string): void {
-                console.log('Unregister debug visualizer:', { extensionId, id });
+                debugLog('Unregister debug visualizer:', { extensionId, id });
             },
             $registerDebugVisualizerTree(treeId: string, canEdit: boolean): void {
-                console.log('Register debug visualizer tree:', { treeId, canEdit });
+                debugLog('Register debug visualizer tree:', { treeId, canEdit });
             },
             $unregisterDebugVisualizerTree(treeId: string): void {
-                console.log('Unregister debug visualizer tree:', treeId);
+                debugLog('Unregister debug visualizer tree:', treeId);
             },
             $registerCallHierarchyProvider(handle: number, supportsResolve: boolean): void {
-                console.log('Register call hierarchy provider:', { handle, supportsResolve });
+                debugLog('Register call hierarchy provider:', { handle, supportsResolve });
             },
             dispose(): void {
-                console.log('Disposing MainThreadDebugService');
+                debugLog('Disposing MainThreadDebugService');
             }
         });
     }
@@ -774,102 +784,102 @@ export class RPCManager {
         // MainThreadTextEditors
         this.rpcProtocol.set(MainContext.MainThreadTextEditors, {
             $tryShowTextDocument(resource: UriComponents, options: any): Promise<string | undefined> {
-                console.log('Try show text document:', { resource, options });
+                debugLog('Try show text document:', { resource, options });
                 return Promise.resolve(undefined);
             },
             $tryShowEditor(id: string, position?: any): Promise<void> {
-                console.log('Try show editor:', { id, position });
+                debugLog('Try show editor:', { id, position });
                 return Promise.resolve();
             },
             $tryHideEditor(id: string): Promise<void> {
-                console.log('Try hide editor:', id);
+                debugLog('Try hide editor:', id);
                 return Promise.resolve();
             },
             $trySetSelections(id: string, selections: any[]): Promise<void> {
-                console.log('Try set selections:', { id, selections });
+                debugLog('Try set selections:', { id, selections });
                 return Promise.resolve();
             },
             $tryRevealRange(id: string, range: any, revealType: any): Promise<void> {
-                console.log('Try reveal range:', { id, range, revealType });
+                debugLog('Try reveal range:', { id, range, revealType });
                 return Promise.resolve();
             },
             $trySetOptions(id: string, options: any): Promise<void> {
-                console.log('Try set options:', { id, options });
+                debugLog('Try set options:', { id, options });
                 return Promise.resolve();
             },
             $tryApplyEdits(id: string, modelVersionId: number, edits: any[], opts: any): Promise<boolean> {
-                console.log('Try apply edits:', { id, modelVersionId, edits, opts });
+                debugLog('Try apply edits:', { id, modelVersionId, edits, opts });
                 return Promise.resolve(true);
             },
             $registerTextEditorDecorationType(extensionId: ExtensionIdentifier, key: string, options: any): void {
-                console.log('Register text editor decoration type:', { extensionId, key, options });
+                debugLog('Register text editor decoration type:', { extensionId, key, options });
             },
             $removeTextEditorDecorationType(key: string): void {
-                console.log('Remove text editor decoration type:', key);
+                debugLog('Remove text editor decoration type:', key);
             },
             $trySetDecorations(id: string, key: string, ranges: any[]): Promise<void> {
-                console.log('Try set decorations:', { id, key, ranges });
+                debugLog('Try set decorations:', { id, key, ranges });
                 return Promise.resolve();
             },
             $trySetDecorationsFast(id: string, key: string, ranges: any[]): Promise<void> {
-                console.log('Try set decorations fast:', { id, key, ranges });
+                debugLog('Try set decorations fast:', { id, key, ranges });
                 return Promise.resolve();
             },
             $tryInsertSnippet(id: string, snippet: any, location: any, options: any): Promise<boolean> {
-                console.log('Try insert snippet:', { id, snippet, location, options });
+                debugLog('Try insert snippet:', { id, snippet, location, options });
                 return Promise.resolve(true);
             },
             $getDiffInformation(id: string): Promise<any> {
-                console.log('Get diff information:', id);
+                debugLog('Get diff information:', id);
                 return Promise.resolve(null);
             },
             dispose(): void {
-                console.log('Dispose MainThreadTextEditors');
+                debugLog('Dispose MainThreadTextEditors');
             }
         });
 
         // MainThreadStorage
         this.rpcProtocol.set(MainContext.MainThreadStorage, {
             $initializeExtensionStorage(shared: boolean, extensionId: string): Promise<string | undefined> {
-                console.log('Initialize extension storage:', { shared, extensionId });
+                debugLog('Initialize extension storage:', { shared, extensionId });
                 return Promise.resolve(undefined);
             },
             $setValue(shared: boolean, extensionId: string, value: object): Promise<void> {
-                console.log('Set value:', { shared, extensionId, value });
+                debugLog('Set value:', { shared, extensionId, value });
                 return Promise.resolve();
             },
             $registerExtensionStorageKeysToSync(extension: any, keys: string[]): void {
-                console.log('Register extension storage keys to sync:', { extension, keys });
+                debugLog('Register extension storage keys to sync:', { extension, keys });
             },
             dispose(): void {
-                console.log('Dispose MainThreadStorage');
+                debugLog('Dispose MainThreadStorage');
             }
         });
 
         // MainThreadOutputService
         this.rpcProtocol.set(MainContext.MainThreadOutputService, {
             $register(label: string, file: UriComponents, languageId: string | undefined, extensionId: string): Promise<string> {
-                console.log('Register output channel:', { label, file, languageId, extensionId });
+                debugLog('Register output channel:', { label, file, languageId, extensionId });
                 return Promise.resolve(`output-${extensionId}-${label}`);
             },
             $update(channelId: string, mode: any, till?: number): Promise<void> {
-                console.log('Update output channel:', { channelId, mode, till });
+                debugLog('Update output channel:', { channelId, mode, till });
                 return Promise.resolve();
             },
             $reveal(channelId: string, preserveFocus: boolean): Promise<void> {
-                console.log('Reveal output channel:', { channelId, preserveFocus });
+                debugLog('Reveal output channel:', { channelId, preserveFocus });
                 return Promise.resolve();
             },
             $close(channelId: string): Promise<void> {
-                console.log('Close output channel:', channelId);
+                debugLog('Close output channel:', channelId);
                 return Promise.resolve();
             },
             $dispose(channelId: string): Promise<void> {
-                console.log('Dispose output channel:', channelId);
+                debugLog('Dispose output channel:', channelId);
                 return Promise.resolve();
             },
             dispose(): void {
-                console.log('Dispose MainThreadOutputService');
+                debugLog('Dispose MainThreadOutputService');
             }
         });
 
@@ -882,36 +892,36 @@ export class RPCManager {
         // MainThreadDocumentContentProviders
         this.rpcProtocol.set(MainContext.MainThreadDocumentContentProviders, {
             $registerTextContentProvider(handle: number, scheme: string): void {
-                console.log('Register text content provider:', { handle, scheme });
+                debugLog('Register text content provider:', { handle, scheme });
             },
             $unregisterTextContentProvider(handle: number): void {
-                console.log('Unregister text content provider:', handle);
+                debugLog('Unregister text content provider:', handle);
             },
             $onVirtualDocumentChange(uri: UriComponents, value: string): Promise<void> {
-                console.log('Virtual document change:', { uri, value });
+                debugLog('Virtual document change:', { uri, value });
                 return Promise.resolve();
             },
             dispose(): void {
-                console.log('Dispose MainThreadDocumentContentProviders');
+                debugLog('Dispose MainThreadDocumentContentProviders');
             }
         });
 
         // MainThreadUrls
         this.rpcProtocol.set(MainContext.MainThreadUrls, {
             $registerUriHandler(handle: number, extensionId: ExtensionIdentifier, extensionDisplayName: string): Promise<void> {
-                console.log('Register URI handler:', { handle, extensionId, extensionDisplayName });
+                debugLog('Register URI handler:', { handle, extensionId, extensionDisplayName });
                 return Promise.resolve();
             },
             $unregisterUriHandler(handle: number): Promise<void> {
-                console.log('Unregister URI handler:', handle);
+                debugLog('Unregister URI handler:', handle);
                 return Promise.resolve();
             },
             $createAppUri(uri: UriComponents): Promise<UriComponents> {
-                console.log('Create app URI:', uri);
+                debugLog('Create app URI:', uri);
                 return Promise.resolve(uri);
             },
             dispose(): void {
-                console.log('Dispose MainThreadUrls');
+                debugLog('Dispose MainThreadUrls');
             }
         });
 
@@ -922,4 +932,11 @@ export class RPCManager {
     public getRPCProtocol(): IRPCProtocol | null {
         return this.rpcProtocol;
     }
-} 
+
+    public dispose(): void {
+        // Clean up RPCProtocol resources and message listeners
+        if (this.rpcProtocol) {
+            (this.rpcProtocol as RPCProtocol).dispose();
+        }
+    }
+}

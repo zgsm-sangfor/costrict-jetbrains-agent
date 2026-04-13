@@ -28,6 +28,8 @@ import com.sina.weibo.agent.util.PluginConstants
 import com.sina.weibo.agent.util.NotificationUtil
 import com.sina.weibo.agent.util.NodeVersionUtil
 import com.sina.weibo.agent.util.NodeVersion
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.io.path.exists
 
 /**
@@ -90,7 +92,7 @@ class ExtensionProcessManager : Disposable {
      * @param portOrPath Socket server port (Int) or UDS path (String)
      * @return Whether started successfully
      */
-    fun start(portOrPath: Any?): Boolean {
+    suspend fun start(portOrPath: Any?): Boolean {
         if (isRunning) {
             LOG.info("Extension process is already running")
             return true
@@ -105,7 +107,7 @@ class ExtensionProcessManager : Disposable {
         
         try {
             // Prepare Node.js executable path
-            var nodePath = findNodeExecutable()
+            var nodePath = withContext(Dispatchers.IO) { findNodeExecutable() }
             if (nodePath == null) {
                 LOG.warn("Node.js not found, attempting to setup...")
                 
@@ -134,7 +136,7 @@ class ExtensionProcessManager : Disposable {
                     )
                     
                     // Check mirror connectivity
-                    if (checkNodeMirrorConnectivity()) {
+                    if (withContext(Dispatchers.IO) { checkNodeMirrorConnectivity() }) {
                         LOG.info("Mirror is accessible, attempting online installation...")
                         
                         // Show notification that we're downloading
@@ -144,7 +146,7 @@ class ExtensionProcessManager : Disposable {
                         )
                         
                         // Try to run online setup script
-                        if (runNodeSetupOnlineScript()) {
+                        if (withContext(Dispatchers.IO) { runNodeSetupOnlineScript() }) {
                             LOG.info("Online setup script completed, retrying Node.js detection...")
                             
                             // Successfully installed
@@ -154,7 +156,7 @@ class ExtensionProcessManager : Disposable {
                             )
                             
                             // Retry finding Node.js after setup
-                            nodePath = findNodeExecutable()
+                            nodePath = withContext(Dispatchers.IO) { findNodeExecutable() }
                             
                             // If still not found, show error
                             if (nodePath == null) {
@@ -210,7 +212,7 @@ class ExtensionProcessManager : Disposable {
                     )
                     
                     // Try to run offline setup script
-                    if (runNodeSetupScript()) {
+                    if (withContext(Dispatchers.IO) { runNodeSetupScript() }) {
                         LOG.info("Setup script completed, retrying Node.js detection...")
                         // Successfully installed
                         NotificationUtil.showInfo(
@@ -218,7 +220,7 @@ class ExtensionProcessManager : Disposable {
                             "NodeJS 安装成功"
                         )
                         // Retry finding Node.js after setup
-                        nodePath = findNodeExecutable()
+                        nodePath = withContext(Dispatchers.IO) { findNodeExecutable() }
                     }
                     
                     // If still not found, show error

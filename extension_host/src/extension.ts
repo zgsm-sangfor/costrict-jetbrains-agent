@@ -43,26 +43,40 @@ const originalProcessSend = process.send || (() => false);
 // Store message event handlers
 const messageHandlers: ((message: any, socket?: net.Socket) => void)[] = [];
 
+function dispatchSocketToMessageHandlers(socket: net.Socket) {
+    const socketMessage = {
+        type: 'VSCODE_EXTHOST_IPC_SOCKET',
+        initialDataChunk: '',
+        skipWebSocketFrames: true,
+        permessageDeflate: false,
+        inflateBytes: ''
+    };
+
+    messageHandlers.forEach(handler => {
+        try {
+            handler(socketMessage, socket);
+        } catch (error) {
+            console.error('Error in message handler:', error);
+        }
+    });
+}
+
 // Reconnection related variables
 let isReconnecting = false;
 let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
-const RECONNECT_DELAY = 1000; // 1 second
+const BASE_DELAY = 1000;      // 基础延迟 1 秒
+const MAX_DELAY = 30000;        // 最大延迟 30 秒
+const MAX_RECONNECT_ATTEMPTS = 10;  // 最大重连次数提升到 10
 
 // Override process.on
 process.on = function(event: string, listener: (...args: any[]) => void): any {
     if (event === 'message') {
+        // 只注册到 messageHandlers，不重复注册到原始 process.on
         messageHandlers.push((message: any, socket?: net.Socket) => {
-            // Check listener parameter count
             const paramCount = listener.length;
-            if (paramCount === 1) {
-                // If only one parameter, pass only message
-                listener(message);
-            } else {
-                // If multiple parameters, pass message and socket
-                listener(message, socket);
-            }
+            paramCount === 1 ? listener(message) : listener(message, socket);
         });
+        return process; // 保持链式调用
     }
     return originalProcessOn.call(process, event, listener);
 };
@@ -88,23 +102,7 @@ function startServer() {
         console.log('Main process connected to extension host');
         socket.setNoDelay(true);
 
-        // Prepare message to send to VSCode module
-        const socketMessage = {
-            type: 'VSCODE_EXTHOST_IPC_SOCKET',
-            initialDataChunk: '',
-            skipWebSocketFrames: true,
-            permessageDeflate: false,
-            inflateBytes: ''
-        };
-        
-        // Call all saved message handlers
-        messageHandlers.forEach(handler => {
-            try {
-                handler(socketMessage, socket);
-            } catch (error) {
-                console.error('Error in message handler:', error);
-            }
-        });
+        dispatchSocketToMessageHandlers(socket);
 
         socket.on('error', (error) => {
             console.error('Socket error:', error);
@@ -188,72 +186,57 @@ function connect() {
             console.log('Connected to main server');
             isReconnecting = false;
             reconnectAttempts = 0;
-            
-             // Prepare the message to be sent to the VSCode module
-            const socketMessage = {
-                type: 'VSCODE_EXTHOST_IPC_SOCKET',
-                initialDataChunk: '',
-                skipWebSocketFrames: true,
-                permessageDeflate: false,
-                inflateBytes: ''
-            };
-            
-             // Call all saved message handler functions
-            messageHandlers.forEach(handler => {
-                try {
-                    handler(socketMessage, socket);
-                } catch (error) {
-                    console.error('Error in message handler:', error);
-                }
-            });
+            dispatchSocketToMessageHandlers(socket);
         });
 
         socket.on('error', (error: Error) => {
             console.error('Socket connection error:', error);
             fileLoggerGlobal.logOutgoing(0, 0, RequestInitiator.LocalSide, 'Socket connection error:', error);
-            handleDisconnect();
+            void handleDisconnect();
         });
 
         socket.on('close', () => {
             console.log('Socket connection closed');
-            handleDisconnect();
+            void handleDisconnect();
         });
     } catch (error) {
         console.error('Connection error:', error);
         fileLoggerGlobal.logOutgoing(0, 0, RequestInitiator.LocalSide, 'Connection error:', error);
-        handleDisconnect();
+        void handleDisconnect();
     }
 }
 
  // Handle disconnection
 async function handleDisconnect() {
-    if (isReconnecting) {
-        console.log("Already in reconnection process, skipping");
-        fileLoggerGlobal.logOutgoing(0, 0, RequestInitiator.LocalSide, 'Already in reconnection process, skipping');
-        return;
-    }
+   if (isReconnecting) {
+       console.log("Already in reconnection process, skipping");
+       fileLoggerGlobal.logOutgoing(0, 0, RequestInitiator.LocalSide, 'Already in reconnection process, skipping');
+       return;
+   }
 
-    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-        console.error('Max reconnection attempts reached. Giving up.');
-        fileLoggerGlobal.logOutgoing(0, 0, RequestInitiator.LocalSide, 'Max reconnection attempts reached. Giving up.');
-        return;
-    }
+   if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+       console.error(`[Extension Host] Max reconnection attempts (${MAX_RECONNECT_ATTEMPTS}) reached`);
+       fileLoggerGlobal.logOutgoing(0, 0, RequestInitiator.LocalSide, `Max reconnection attempts (${MAX_RECONNECT_ATTEMPTS}) reached`);
+       return;
+   }
 
-    isReconnecting = true;
-    reconnectAttempts++;
+   isReconnecting = true;
+   reconnectAttempts++;
 
-    console.log(`Attempting to reconnect (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
-
-     // Retry after waiting for a period of time
-    console.log(`Waiting ${RECONNECT_DELAY}ms before reconnecting...`);
-    await new Promise(resolve => setTimeout(resolve, RECONNECT_DELAY));
-    console.log("Reconnection delay finished, attempting to connect...");
-    
-     // Reset reconnection state to allow new reconnection attempts
-    isReconnecting = false;
-    connect();
+   try {
+       // 指数退避 + 随机抖动
+       const delay = Math.min(BASE_DELAY * Math.pow(2, reconnectAttempts - 1), MAX_DELAY)
+                   + Math.random() * 500; // 0-500ms 随机抖动
+       console.log(`[Extension Host] Reconnecting in ${Math.round(delay)}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+       fileLoggerGlobal.logOutgoing(0, 0, RequestInitiator.LocalSide, `Reconnecting in ${Math.round(delay)}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+       await new Promise(resolve => setTimeout(resolve, delay));
+       connect();  // connect() will reset reconnectAttempts on success
+   } catch (error) {
+       console.error('[Extension Host] Reconnection failed:', error);
+       fileLoggerGlobal.logOutgoing(0, 0, RequestInitiator.LocalSide, 'Reconnection failed:', error);
+       isReconnecting = false;
+   }
 }
-
 }
 
 console.log("Starting extension host process...");

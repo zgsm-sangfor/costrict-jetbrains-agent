@@ -6,6 +6,7 @@ package com.sina.weibo.agent.editor
 
 import com.intellij.diff.DiffContentFactory
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import com.intellij.diff.chains.DiffRequestChain
 import com.intellij.diff.chains.SimpleDiffRequestChain
 import com.intellij.diff.contents.DiffContent
@@ -47,11 +48,29 @@ class EditorAndDocManager(val project: Project) : Disposable {
     private var state = DocumentsAndEditorsState()
     private var lastNotifiedState = DocumentsAndEditorsState()
     private var editorHandles = ConcurrentHashMap<String, EditorHolder>()
+    private val uriToHandles = ConcurrentHashMap<String, CopyOnWriteArrayList<EditorHolder>>()
     private val ideaOpenedEditor = ConcurrentHashMap<String, Editor>()
     private var tabManager : TabStateManager = TabStateManager(project)
 
     private var job: Job? = null
     private val editorStateService:EditorStateService = EditorStateService(project)
+
+    private fun addHandleForUri(uriPath: String, handle: EditorHolder) {
+        uriToHandles.computeIfAbsent(uriPath) { CopyOnWriteArrayList() }.add(handle)
+    }
+
+    private fun removeHandleForUri(uriPath: String, handle: EditorHolder) {
+        uriToHandles[uriPath]?.let { handles ->
+            handles.remove(handle)
+            if (handles.isEmpty()) {
+                uriToHandles.remove(uriPath, handles)
+            }
+        }
+    }
+
+    private fun getHandlesForUri(uriPath: String): List<EditorHolder> {
+        return uriToHandles[uriPath]?.toList() ?: emptyList()
+    }
 
     init {
         ideaEditorListener = object : FileEditorManagerListener {
@@ -170,6 +189,7 @@ class EditorAndDocManager(val project: Project) : Disposable {
         state.documents[documentUri] = documentState
         state.editors[id] = editorState
         editorHandles[id] = handle
+        addHandleForUri(documentUri.path, handle)
         handle.setActive(true)
         processUpdates()
         return handle
@@ -276,26 +296,12 @@ class EditorAndDocManager(val project: Project) : Disposable {
             return handle
         }
     }
-
     fun getEditorHandleByUri(resource: URI,diff: Boolean): EditorHolder? {
-        val values = editorHandles.values
-        for (handle in values){
-            if (handle.document.uri.path == resource.path && handle.diff == diff) {
-                return handle
-            }
-        }
-        return null
+        return getHandlesForUri(resource.path).find { it.diff == diff }
     }
 
     fun getEditorHandleByUri(resource: URI): List<EditorHolder> {
-        val list = mutableListOf<EditorHolder>()
-        val values = editorHandles.values
-        for (handle in values){
-            if (handle.document.uri.path == resource.path ) {
-                list.add(handle)
-            }
-        }
-        return list
+        return getHandlesForUri(resource.path)
     }
 
 
@@ -313,10 +319,10 @@ class EditorAndDocManager(val project: Project) : Disposable {
                     val len = file.length
                     if (len > 3 * 1024 * 1024) {
                         val buffer = ByteArray(3 * 1024 * 1024)
-                        val inputStream = FileInputStream(File(file.path))
-                        val bytesRead = inputStream.read(buffer)
-                        inputStream.close()
-                        String(buffer, 0, bytesRead, Charsets.UTF_8)
+                        FileInputStream(File(file.path)).use { inputStream ->
+                            val bytesRead = inputStream.read(buffer)
+                            String(buffer, 0, bytesRead, Charsets.UTF_8)
+                        }
                     } else {
                         file.readText()
                     }
@@ -346,6 +352,9 @@ class EditorAndDocManager(val project: Project) : Disposable {
     fun removeEditor(id: String) {
         state.editors.remove(id)
         val handler = editorHandles.remove(id)
+        handler?.let { h ->
+            removeHandleForUri(h.document.uri.path, h)
+        }
         var needDeleteDoc = true
         val values = editorHandles.values
         values.forEach { value->
@@ -376,7 +385,10 @@ class EditorAndDocManager(val project: Project) : Disposable {
             val handler = getEditorHandleByTabId(id)
             handler?.let {
                 state.editors.remove(it.id)
-                val handler = editorHandles.remove(it.id)
+                val removedHandler = editorHandles.remove(it.id)
+                removedHandler?.let { h ->
+                    removeHandleForUri(h.document.uri.path, h)
+                }
                 this.state.documents.remove(it.document.uri)
                 if (state.activeEditorId == it.id) {
                     state.activeEditorId = null
